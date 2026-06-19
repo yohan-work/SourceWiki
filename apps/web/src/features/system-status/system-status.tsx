@@ -53,13 +53,8 @@ export function SystemStatus() {
 
   return (
     <div className={`status-panel status-panel--${state.status}`} aria-live="polite">
-      <div className="status-panel__signal" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
+      <span className="status-panel__signal" aria-hidden="true" />
       <div className="status-panel__copy">
-        <span className="status-panel__overline">LIVE CONNECTION</span>
         <strong>{copy.label}</strong>
         <p>{copy.detail}</p>
       </div>
@@ -73,7 +68,7 @@ export function SystemStatus() {
           <dd>{state.status === 'ready' ? 'UP' : state.status === 'checking' ? '—' : 'CHECK'}</dd>
         </div>
         <div>
-          <dt>LAST CHECK</dt>
+          <dt>확인 시간</dt>
           <dd>
             {state.checkedAt ? new Date(state.checkedAt).toLocaleTimeString('ko-KR') : 'PENDING'}
           </dd>

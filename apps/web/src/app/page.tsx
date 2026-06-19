@@ -2,19 +2,16 @@ import { SystemStatus } from '@/features/system-status/system-status';
 
 const principles = [
   {
-    number: '01',
-    title: '출처를 먼저',
-    body: '링크에서 시작해 원본의 위치와 맥락을 잃지 않습니다.',
+    title: '링크 저장',
+    body: '읽고 싶은 기술 자료의 URL과 출처를 한곳에 저장해요.',
   },
   {
-    number: '02',
-    title: '요약은 초안으로',
-    body: 'AI가 정리하고, 사람이 검토해 지식으로 남깁니다.',
+    title: '내용 정리',
+    body: '본문을 가져오고 AI 요약 초안을 직접 검토해 정리해요.',
   },
   {
-    number: '03',
-    title: '실패해도 기록',
-    body: '추출과 AI가 멈춰도 직접 쓰고 계속 저장할 수 있습니다.',
+    title: '지식 축적',
+    body: '메모와 태그를 더해 다시 찾기 쉬운 지식으로 쌓아가요.',
   },
 ] as const;
 
@@ -22,74 +19,69 @@ export default function Home() {
   return (
     <>
       <section className="hero" aria-labelledby="hero-title">
-        <div className="hero__eyebrow reveal reveal--one">
-          <span>PUBLIC KNOWLEDGE ARCHIVE</span>
-          <span>VOL. 01 / 2026</span>
+        <div className="hero__copy">
+          <p className="hero__eyebrow">AI KNOWLEDGE ARCHIVE</p>
+          <h1 id="hero-title">
+            기술 링크를
+            <br />내 지식으로 정리하세요.
+          </h1>
+          <p className="hero__description">
+            흩어진 기술 자료를 링크부터 요약, 메모까지
+            <br className="desktop-break" /> 한곳에서 간단하게 관리해요.
+          </p>
+          <div className="hero__actions">
+            <a className="button button--primary" href="#how-it-works">
+              서비스 살펴보기
+            </a>
+            <a className="button button--text" href="#system-status">
+              개발 상태 보기
+            </a>
+          </div>
         </div>
 
-        <div className="hero__composition">
-          <div className="hero__copy">
-            <p className="hero__kicker reveal reveal--two">읽고, 연결하고, 다시 꺼내는</p>
-            <h1 id="hero-title" className="hero__title reveal reveal--three">
-              기술 자료를
-              <span>기억으로 바꾸는 위키.</span>
-            </h1>
-            <p className="hero__description reveal reveal--four">
-              SourceLink Wiki는 흩어진 AI 기술 링크에 출처, 요약, 메모를 더해 오래 사용할 수 있는
-              공개 지식으로 엮습니다.
-            </p>
-            <div className="hero__actions reveal reveal--four">
-              <a className="primary-link" href="#foundation">
-                설계 원칙 읽기
-                <span aria-hidden="true">↘</span>
-              </a>
-              <a className="text-link" href="#system-status">
-                시스템 상태
-              </a>
+        <div className="archive-visual" aria-label="자료 정리 화면 예시">
+          <div className="archive-preview">
+            <div className="archive-preview__toolbar">
+              <span />
+              <span>sourcewiki.dev</span>
+            </div>
+            <div className="archive-preview__content">
+              <span className="archive-preview__label">NEW SOURCE</span>
+              <h2>Building reliable AI agents</h2>
+              <p>AI 에이전트의 구조와 안정적인 실행 흐름을 정리한 기술 자료</p>
+              <div className="archive-preview__tags">
+                <span>Agent</span>
+                <span>LLM</span>
+                <span>Architecture</span>
+              </div>
             </div>
           </div>
-
-          <aside className="hero__folio reveal reveal--three" aria-label="프로젝트 단계">
-            <span className="folio__label">CURRENT EDITION</span>
-            <strong>Phase 01</strong>
-            <p>Foundation</p>
-            <div className="folio__rule" />
-            <span>Web · API · Database</span>
-          </aside>
-        </div>
-
-        <div className="hero__annotation" aria-hidden="true">
-          SOURCE / CONTEXT / CONNECTION
         </div>
       </section>
 
-      <section id="foundation" className="principles" aria-labelledby="principles-title">
+      <section id="how-it-works" className="features" aria-labelledby="features-title">
         <div className="section-heading">
-          <span className="section-heading__index">A—01</span>
-          <div>
-            <p>ARCHIVE PRINCIPLES</p>
-            <h2 id="principles-title">북마크보다 오래 남는 구조</h2>
-          </div>
+          <p>SourceLink Wiki</p>
+          <h2 id="features-title">링크 하나로 시작해요</h2>
+          <span>자료를 저장하고 정리하는 데 필요한 기능만 담았습니다.</span>
         </div>
 
-        <div className="principles__list">
-          {principles.map((principle) => (
-            <article className="principle" key={principle.number}>
-              <span>{principle.number}</span>
-              <h3>{principle.title}</h3>
-              <p>{principle.body}</p>
+        <div className="feature-list">
+          {principles.map((feature, index) => (
+            <article className="feature" key={feature.title}>
+              <span className="feature__number">0{index + 1}</span>
+              <h3>{feature.title}</h3>
+              <p>{feature.body}</p>
             </article>
           ))}
         </div>
       </section>
 
       <section id="system-status" className="status-section" aria-labelledby="status-title">
-        <div className="section-heading section-heading--light">
-          <span className="section-heading__index">S—01</span>
-          <div>
-            <p>SYSTEM FOUNDATION</p>
-            <h2 id="status-title">모든 연결이 준비되었는지 확인합니다.</h2>
-          </div>
+        <div className="status-section__heading">
+          <p>DEVELOPMENT STATUS</p>
+          <h2 id="status-title">서비스 기반을 만들고 있어요</h2>
+          <span>현재 Web, API, Database 연결 상태를 확인할 수 있습니다.</span>
         </div>
         <SystemStatus />
       </section>

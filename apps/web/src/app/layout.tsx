@@ -14,7 +14,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko">
       <body>
-        <div className="paper-grain" aria-hidden="true" />
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
