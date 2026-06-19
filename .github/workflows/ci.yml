@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: sourcewiki
+          POSTGRES_USER: sourcewiki
+          POSTGRES_PASSWORD: sourcewiki_local
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sourcewiki -d sourcewiki"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://sourcewiki:sourcewiki_local@localhost:5432/sourcewiki?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.16.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm format:check
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+      - name: Build and start stack
+        env:
+          APP_PORT: 8080
+        run: docker compose up --build --wait --wait-timeout 180
+      - name: Verify routed services
+        run: |
+          curl --fail --retry 5 --retry-delay 2 http://localhost:8080/
+          curl --fail http://localhost:8080/api/health/live
+          curl --fail http://localhost:8080/api/health/ready
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop stack
+        if: always()
+        run: docker compose down --volumes
