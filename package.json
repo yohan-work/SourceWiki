@@ -1,0 +1,33 @@
+{
+  "name": "sourcewiki",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.34.0",
+  "engines": {
+    "node": ">=24.13.0 <25"
+  },
+  "scripts": {
+    "predev": "pnpm --filter @sourcewiki/shared build",
+    "dev": "pnpm --parallel --filter @sourcewiki/api --filter @sourcewiki/web dev",
+    "dev:infra": "docker compose up -d db",
+    "build": "pnpm --filter @sourcewiki/shared build && pnpm --filter @sourcewiki/api build && pnpm --filter @sourcewiki/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm --filter @sourcewiki/shared build && pnpm --filter @sourcewiki/api typecheck && pnpm --filter @sourcewiki/web typecheck",
+    "pretest": "pnpm --filter @sourcewiki/shared build",
+    "test": "pnpm -r test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "db:generate": "pnpm --filter @sourcewiki/api db:generate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "16.2.9",
+    "prettier": "^3.6.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.50.0",
+    "vitest": "^4.0.0"
+  }
+}

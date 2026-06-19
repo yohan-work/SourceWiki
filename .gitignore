@@ -16,3 +16,26 @@ Icon
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+
+# Dependencies and build output
+node_modules/
+.pnpm-store/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+apps/api/src/generated/
+
+# Environment and local runtime
+.env
+.env.*
+!.env.example
+*.log
+.caddy/
+
+# Test and tooling
+playwright-report/
+test-results/
+output/playwright/
+.playwright-cli/
+.turbo/
