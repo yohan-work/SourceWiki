@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AuthActions } from '@/features/auth/auth-actions';
 
 export function SiteHeader() {
   return (
@@ -11,8 +12,8 @@ export function SiteHeader() {
       </Link>
 
       <nav className="site-nav" aria-label="주요 메뉴">
-        <a href="#how-it-works">서비스 소개</a>
-        <a href="#system-status">개발 상태</a>
+        <Link href="/#how-it-works">서비스 소개</Link>
+        <AuthActions />
       </nav>
     </header>
   );

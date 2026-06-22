@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { QueryProvider } from '@/lib/query/query-provider';
 
 import './globals.css';
 
@@ -14,9 +15,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko">
       <body>
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
+        <QueryProvider>
+          <SiteHeader />
+          <main>{children}</main>
+          <SiteFooter />
+        </QueryProvider>
       </body>
     </html>
   );
