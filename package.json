@@ -9,7 +9,7 @@
   "scripts": {
     "predev": "pnpm --filter @sourcewiki/shared build",
     "dev": "pnpm --parallel --filter @sourcewiki/api --filter @sourcewiki/web dev",
-    "dev:infra": "docker compose up -d db",
+    "dev:infra": "docker compose up -d db mailpit",
     "build": "pnpm --filter @sourcewiki/shared build && pnpm --filter @sourcewiki/api build && pnpm --filter @sourcewiki/web build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm --filter @sourcewiki/shared build && pnpm --filter @sourcewiki/api typecheck && pnpm --filter @sourcewiki/web typecheck",
@@ -19,7 +19,8 @@
     "format:check": "prettier --check .",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "db:generate": "pnpm --filter @sourcewiki/api db:generate"
+    "db:generate": "pnpm --filter @sourcewiki/api db:generate",
+    "db:deploy": "pnpm --filter @sourcewiki/api db:deploy"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

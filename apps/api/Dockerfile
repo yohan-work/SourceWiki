@@ -15,4 +15,4 @@ RUN pnpm --filter @sourcewiki/shared build && pnpm --filter @sourcewiki/api buil
 
 ENV NODE_ENV=production
 EXPOSE 4000
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["sh", "-c", "pnpm --filter @sourcewiki/api db:deploy && node apps/api/dist/server.js"]

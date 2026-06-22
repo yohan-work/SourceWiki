@@ -1,6 +1,6 @@
 # SourceLink Wiki
 
-AI 기술 자료의 출처와 맥락을 함께 쌓는 공개 지식 아카이브입니다. 현재 Phase 1에서는 Next.js, Express, PostgreSQL이 연결된 프로젝트 기반과 상태 화면을 제공합니다.
+AI 기술 자료의 출처와 맥락을 함께 쌓는 공개 지식 아카이브입니다. 현재 이메일 인증, 회전형 JWT 세션, 로그인 상태 복구를 포함한 Phase 2 인증 흐름을 제공합니다.
 
 ## 요구 환경
 
@@ -16,17 +16,19 @@ pnpm install
 
 ## 로컬 개발
 
-빠른 hot reload 개발은 PostgreSQL만 Docker로 실행합니다.
+빠른 hot reload 개발은 PostgreSQL과 Mailpit만 Docker로 실행합니다.
 
 ```bash
 cp .env.example .env
 pnpm dev:infra
+pnpm db:deploy
 pnpm dev
 ```
 
 - Web: http://localhost:3000
 - API live: http://localhost:4000/api/health/live
 - API ready: http://localhost:4000/api/health/ready
+- Mailpit: http://localhost:8025
 
 Web의 `/api/*` 요청은 Next.js rewrite를 통해 API로 전달됩니다.
 
@@ -37,7 +39,15 @@ cp .env.example .env
 pnpm docker:up
 ```
 
-서비스는 Caddy 단일 진입점 http://localhost:8080 에서 제공됩니다. 종료 시 `pnpm docker:down`을 사용하며 데이터베이스 volume은 유지됩니다.
+서비스는 Caddy 단일 진입점 http://localhost:8080 에서 제공됩니다. 인증 메일은 http://localhost:8025 에서 확인할 수 있습니다. 종료 시 `pnpm docker:down`을 사용하며 데이터베이스 volume은 유지됩니다.
+
+## 인증 흐름
+
+- 가입: `/signup`에서 계정을 만든 뒤 Mailpit의 인증 링크를 사용합니다.
+- 로그인: `/login`에서 인증 완료 계정으로 로그인합니다.
+- 세션: access 15분, refresh 14일 HttpOnly 쿠키를 사용하며 refresh마다 세션을 회전합니다.
+- 복구: 프론트는 JWT를 읽거나 저장하지 않고 `GET /api/auth/me`로 사용자를 복구합니다.
+- 개발용 `.env.example` secret과 SMTP 설정은 운영 환경에서 반드시 교체합니다.
 
 ## 검증 명령
 
@@ -54,10 +64,10 @@ docker compose config --quiet
 
 ```text
 apps/web             Next.js App Router와 서비스 셸
-apps/api             Express API, Prisma, health endpoint
+apps/api             Express API, Prisma, health/auth endpoint
 packages/shared      API schema와 공유 TypeScript 타입
 infra/Caddyfile      same-origin reverse proxy
-compose.yaml         web/api/db/Caddy 로컬 stack
+compose.yaml         web/api/db/Mailpit/Caddy 로컬 stack
 docs                 제품·기술 설계 문서
 ```
 

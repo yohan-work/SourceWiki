@@ -1,6 +1,18 @@
 name: sourcewiki
 
 services:
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_UI_PORT:-8025}:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   db:
     image: postgres:17-alpine
     environment:
@@ -27,8 +39,19 @@ services:
       API_PORT: 4000
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL: postgresql://${POSTGRES_USER:-sourcewiki}:${POSTGRES_PASSWORD:-sourcewiki_local}@db:5432/${POSTGRES_DB:-sourcewiki}?schema=public
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-development-access-secret-change-me-123456}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-development-refresh-secret-change-me-12345}
+      JWT_ISSUER: ${JWT_ISSUER:-sourcewiki-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-sourcewiki-web}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_FROM: ${SMTP_FROM:-noreply@sourcewiki.local}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
       db:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     healthcheck:
       test:
