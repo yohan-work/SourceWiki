@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { apiErrorResponseSchema, healthResponseSchema } from './index.js';
+import { apiErrorResponseSchema, healthResponseSchema, signupRequestSchema } from './index.js';
 
 describe('shared API schemas', () => {
   it('accepts a readiness response', () => {
@@ -23,5 +23,14 @@ describe('shared API schemas', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('normalizes signup email and validates account fields', () => {
+    const result = signupRequestSchema.parse({
+      email: '  USER@Example.COM ',
+      nickname: '기록자',
+      password: 'password123',
+    });
+    expect(result.email).toBe('user@example.com');
   });
 });

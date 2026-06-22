@@ -7,6 +7,18 @@ const envSchema = z.object({
   DATABASE_URL: z
     .url()
     .default('postgresql://sourcewiki:sourcewiki_local@localhost:5432/sourcewiki?schema=public'),
+  APP_URL: z.url().default('http://localhost:3000'),
+  JWT_ACCESS_SECRET: z.string().min(32).default('development-access-secret-change-me-123456'),
+  JWT_REFRESH_SECRET: z.string().min(32).default('development-refresh-secret-change-me-12345'),
+  JWT_ISSUER: z.string().min(1).default('sourcewiki-api'),
+  JWT_AUDIENCE: z.string().min(1).default('sourcewiki-web'),
+  SMTP_HOST: z.string().min(1).default('localhost'),
+  SMTP_PORT: z.coerce.number().int().positive().max(65535).default(1025),
+  SMTP_FROM: z.email().default('noreply@sourcewiki.local'),
+  COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 const parsed = envSchema.safeParse(process.env);
