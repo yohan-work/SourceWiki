@@ -61,13 +61,13 @@ postgres:17-alpine 이미지를 사용해서 db 컨테이너를 실행한다
 `pnpm dev:infra`를 실행하면 이 명령이 실행됩니다.
 
 ```bash
-docker compose up -d db
+docker compose up -d db mailpit
 ```
 
 뜻은 다음과 같습니다.
 
 ```text
-compose.yaml에 정의된 서비스 중 db만 백그라운드로 실행해줘
+compose.yaml에 정의된 서비스 중 db와 mailpit을 백그라운드로 실행해줘
 ```
 
 여기서 `db`가 PostgreSQL입니다.
@@ -80,10 +80,11 @@ compose.yaml에 정의된 서비스 중 db만 백그라운드로 실행해줘
 │  ├─ web: localhost:3000
 │  └─ api: localhost:4000
 └─ Docker
-   └─ db: PostgreSQL, localhost:5432
+   ├─ db: PostgreSQL, localhost:5432
+   └─ mailpit: 개발용 메일, localhost:8025
 ```
 
-즉, web과 api는 내 컴퓨터의 Node.js에서 실행되고, PostgreSQL만 Docker 컨테이너 안에서 실행됩니다.
+즉, web과 api는 내 컴퓨터의 Node.js에서 실행되고, PostgreSQL과 Mailpit은 Docker 컨테이너 안에서 실행됩니다.
 
 ## localhost:5432는 무엇인가?
 

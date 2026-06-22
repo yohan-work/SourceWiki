@@ -1,6 +1,6 @@
 # SourceWiki 학습 노트
 
-이 폴더는 SourceWiki 프로젝트를 이해하기 위한 학습용 문서입니다. 처음 보는 사람이 `pnpm`, 모노레포, Docker, PostgreSQL, Caddy, GitHub Actions CI를 한 번에 따라갈 수 있도록 쉬운 설명을 기준으로 정리했습니다.
+이 폴더는 SourceWiki 프로젝트를 이해하기 위한 학습용 문서입니다. 처음 보는 사람이 프로젝트 기반부터 회원가입, 이메일 인증, JWT 로그인까지 단계적으로 따라갈 수 있도록 쉬운 설명을 기준으로 정리했습니다.
 
 ## 먼저 알아야 할 큰 그림
 
@@ -25,7 +25,7 @@ pnpm dev
 
 의미는 다음과 같습니다.
 
-- `pnpm dev:infra`: Docker로 PostgreSQL DB만 먼저 실행합니다.
+- `pnpm dev:infra`: Docker로 PostgreSQL DB와 Mailpit을 먼저 실행합니다.
 - `pnpm dev`: 내 컴퓨터의 Node.js로 web과 api를 동시에 실행합니다.
 
 전체를 Docker로 실행할 때는 이렇게 실행합니다.
@@ -42,7 +42,13 @@ pnpm docker:up
 2. [Docker, PostgreSQL, Docker Compose](./02-docker-compose-postgres.md)
 3. [Caddy와 GitHub Actions CI](./03-caddy-ci.md)
 4. [자주 쓰는 명령어와 문제 해결](./04-commands-troubleshooting.md)
+5. [Phase 2 인증의 전체 흐름](./05-phase2-auth-overview.md)
+6. [사용자 DB 모델과 Prisma migration](./06-auth-database-prisma.md)
+7. [회원가입과 Mailpit 이메일 인증](./07-signup-email-verification.md)
+8. [JWT 로그인, refresh rotation, 보안](./08-jwt-session-security.md)
+9. [프론트엔드 인증 상태와 화면](./09-frontend-auth-flow.md)
+10. [인증 테스트와 디버깅](./10-auth-testing-debugging.md)
 
 ## 한 문장 요약
 
-이 프로젝트는 `pnpm`으로 여러 Node 패키지를 한 저장소에서 관리하고, Docker로 DB와 운영에 가까운 실행 환경을 만들며, GitHub Actions에서 코드 품질과 Docker 실행 가능 여부를 자동으로 검증합니다.
+이 프로젝트는 `pnpm`으로 여러 Node 패키지를 한 저장소에서 관리하고, Docker로 인프라를 실행하며, Web과 API가 공유 schema를 기준으로 이메일 인증과 회전형 JWT session을 처리합니다.

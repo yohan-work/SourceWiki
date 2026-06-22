@@ -159,4 +159,4 @@ api 실행 + web 실행
 - `pnpm-workspace.yaml`은 모노레포 패키지 위치를 알려줍니다.
 - `packages/shared`는 web과 api가 같이 쓰는 공통 코드입니다.
 - `pnpm dev`는 web과 api를 동시에 실행합니다.
-- DB는 `pnpm dev`가 아니라 `pnpm dev:infra`로 Docker에서 따로 실행합니다.
+- DB와 개발용 메일 서버는 `pnpm dev`가 아니라 `pnpm dev:infra`로 Docker에서 따로 실행합니다.

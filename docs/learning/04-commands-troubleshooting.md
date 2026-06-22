@@ -22,6 +22,7 @@ cp .env.example .env
 
 ```bash
 pnpm dev:infra
+pnpm db:deploy
 pnpm dev
 ```
 
@@ -29,7 +30,10 @@ pnpm dev
 
 ```text
 pnpm dev:infra
-  Docker로 PostgreSQL db만 실행
+  Docker로 PostgreSQL db와 Mailpit 실행
+
+pnpm db:deploy
+  현재 Prisma migration을 DB에 적용
 
 pnpm dev
   Node.js로 api와 web을 동시에 실행
@@ -42,6 +46,7 @@ Web:       http://localhost:3000
 API live:  http://localhost:4000/api/health/live
 API ready: http://localhost:4000/api/health/ready
 DB:        localhost:5432
+Mailpit:   http://localhost:8025
 ```
 
 주의할 점은 `localhost:5432`는 브라우저 주소가 아니라 DB 접속 주소입니다.
