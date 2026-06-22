@@ -49,6 +49,8 @@ pnpm docker:up
 - 복구: 프론트는 JWT를 읽거나 저장하지 않고 `GET /api/auth/me`로 사용자를 복구합니다.
 - 개발용 `.env.example` secret과 SMTP 설정은 운영 환경에서 반드시 교체합니다.
 
+실행 방식별 접속 주소, Mailpit 사용법, 회원·인증 토큰·세션 DB 조회, 쿠키 확인과 문제 해결은 [`docs/12-authentication-development-guide.md`](docs/12-authentication-development-guide.md)를 참고합니다.
+
 ## 검증 명령
 
 ```bash
@@ -70,6 +72,11 @@ infra/Caddyfile      same-origin reverse proxy
 compose.yaml         web/api/db/Mailpit/Caddy 로컬 stack
 docs                 제품·기술 설계 문서
 ```
+
+## 개발 문서
+
+- [`docs/11-current-infrastructure.md`](docs/11-current-infrastructure.md): CI와 Docker 기반 구조
+- [`docs/12-authentication-development-guide.md`](docs/12-authentication-development-guide.md): 인증 실행·접속·데이터 확인 가이드
 
 ## Health 계약
 

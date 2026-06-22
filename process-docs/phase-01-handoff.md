@@ -30,15 +30,15 @@ Phase 1의 목표는 빈 저장소에 실행 가능한 풀스택 기반과 자�
 
 ## 3. 확정된 기술과 구조
 
-| 영역 | 결정 |
-| --- | --- |
-| Node.js | 24 LTS, `.node-version`은 24.16.0 |
-| Package manager | pnpm 10.34.0, lockfile 커밋 |
-| Frontend | Next.js 16.2.9, React 19.2.7, App Router |
-| Backend | Express 5.2.1, TypeScript, Zod, Pino |
-| Database | PostgreSQL 17, Prisma 7.8 driver adapter 방식 |
-| Proxy | Caddy 2.10, `/api/*`는 API, 나머지는 Web |
-| 상태 공유 | `@sourcewiki/shared`의 Zod schema와 TypeScript type |
+| 영역            | 결정                                                |
+| --------------- | --------------------------------------------------- |
+| Node.js         | 24 LTS, `.node-version`은 24.16.0                   |
+| Package manager | pnpm 10.34.0, lockfile 커밋                         |
+| Frontend        | Next.js 16.2.9, React 19.2.7, App Router            |
+| Backend         | Express 5.2.1, TypeScript, Zod, Pino                |
+| Database        | PostgreSQL 17, Prisma 7.8 driver adapter 방식       |
+| Proxy           | Caddy 2.10, `/api/*`는 API, 나머지는 Web            |
+| 상태 공유       | `@sourcewiki/shared`의 Zod schema와 TypeScript type |
 
 Web 페이지는 Server Component가 기본이며, 실제 health 요청을 수행하는 `SystemStatus`만 Client Component다.
 
@@ -151,12 +151,12 @@ GET /api/health/ready
 
 Compose가 실행하는 서비스는 다음 네 개다.
 
-| 서비스 | 생성 방식 | 외부 접근 |
-| --- | --- | --- |
-| `db` | `postgres:17-alpine` pull | 기본 host port 5432 |
-| `api` | `apps/api/Dockerfile` 로컬 build | Caddy를 통해 접근 |
-| `web` | `apps/web/Dockerfile` 로컬 build | Caddy를 통해 접근 |
-| `caddy` | `caddy:2.10-alpine` pull | 기본 host port 8080 |
+| 서비스  | 생성 방식                        | 외부 접근           |
+| ------- | -------------------------------- | ------------------- |
+| `db`    | `postgres:17-alpine` pull        | 기본 host port 5432 |
+| `api`   | `apps/api/Dockerfile` 로컬 build | Caddy를 통해 접근   |
+| `web`   | `apps/web/Dockerfile` 로컬 build | Caddy를 통해 접근   |
+| `caddy` | `caddy:2.10-alpine` pull         | 기본 host port 8080 |
 
 Web/API에는 `image:`와 registry 주소가 없다. 로컬 또는 CI runner 안에서 `sourcewiki-web:latest`, `sourcewiki-api:latest` 형태로 빌드될 뿐 외부 registry에 업로드되지 않는다.
 
