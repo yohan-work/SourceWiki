@@ -5,7 +5,7 @@ import { sourceCreateRequestSchema } from '@sourcewiki/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -51,6 +51,11 @@ const tags = (value: string) =>
 export function SourceForm({ id }: { id?: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [extractPreview, setExtractPreview] = useState<{
+    domain: string;
+    preview: string;
+    truncated: boolean;
+  } | null>(null);
   const { data: me, isPending: authPending } = useMeQuery();
   const { data: detail, isPending: detailPending } = useQuery({
     queryKey: sourceKeys.detail(id ?? ''),
@@ -61,8 +66,11 @@ export function SourceForm({ id }: { id?: string }) {
   const {
     register,
     handleSubmit,
+    clearErrors,
+    getValues,
     reset,
     setError,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: defaults });
 
@@ -130,6 +138,37 @@ export function SourceForm({ id }: { id?: string }) {
     },
   });
 
+  const extractMutation = useMutation({
+    mutationFn: () => sourceApi.extractUrl({ url: getValues('originalUrl') }),
+    onSuccess: (response) => {
+      const extracted = response.data;
+      setValue('originalUrl', extracted.finalUrl, { shouldDirty: true, shouldValidate: true });
+      if (extracted.title)
+        setValue('title', extracted.title, { shouldDirty: true, shouldValidate: true });
+      setValue('sourceType', extracted.sourceType, { shouldDirty: true, shouldValidate: true });
+      setValue('rawText', extracted.rawText, { shouldDirty: true, shouldValidate: true });
+      setExtractPreview({
+        domain: extracted.domain,
+        preview: extracted.preview,
+        truncated: extracted.truncated,
+      });
+      clearErrors('root');
+    },
+    onError: (error) => {
+      setExtractPreview(null);
+      if (error instanceof ApiError) {
+        setError('root', { message: error.message });
+        if (error.code === 'URL_INVALID' || error.fieldErrors?.url)
+          setError('originalUrl', { message: error.fieldErrors?.url?.[0] ?? error.message });
+      } else setError('root', { message: '본문을 가져오지 못했습니다.' });
+    },
+  });
+
+  const handleExtract = () => {
+    clearErrors('root');
+    extractMutation.mutate();
+  };
+
   if (authPending || (id && detailPending))
     return <div className="form-loading" aria-label="편집 권한 확인 중" />;
   if (!me) return null;
@@ -174,12 +213,35 @@ export function SourceForm({ id }: { id?: string }) {
           </select>
         </label>
       </div>
+      {!id ? (
+        <div className="extract-panel">
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={handleExtract}
+            disabled={extractMutation.isPending}
+          >
+            {extractMutation.isPending ? '본문 가져오는 중…' : '본문 가져오기'}
+          </button>
+          <p>
+            공개 HTML과 일반 텍스트 문서에서 제목과 본문을 미리 채웁니다. 실패해도 수동으로 저장할
+            수 있습니다.
+          </p>
+          {extractPreview ? (
+            <div className="extract-preview" aria-live="polite">
+              <strong>{extractPreview.domain}</strong>
+              <p>{extractPreview.preview}</p>
+              {extractPreview.truncated ? <small>긴 본문은 100,000자에서 잘렸습니다.</small> : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <label>
         <span>정제 본문</span>
         <textarea
           className="textarea-large"
           {...register('rawText')}
-          placeholder="본문 가져오기는 다음 단계에서 제공됩니다. 지금은 필요한 부분을 직접 붙여넣을 수 있어요."
+          placeholder="본문 가져오기를 실행하거나 필요한 부분을 직접 붙여넣을 수 있습니다."
         />
       </label>
       {id ? (

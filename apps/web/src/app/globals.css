@@ -432,6 +432,21 @@ a:focus-visible {
   background: var(--blue-hover);
 }
 
+.button--secondary {
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--black);
+}
+
+.button--secondary:hover {
+  background: var(--gray-50);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
 .button--text {
   color: var(--gray-700);
 }
@@ -1100,6 +1115,46 @@ a:focus-visible {
   display: grid;
   grid-template-columns: 1.5fr 0.7fr;
   gap: 16px;
+}
+.extract-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--gray-300);
+  border-radius: 16px;
+  background: var(--gray-50);
+}
+.extract-panel > p {
+  margin: 0;
+  color: var(--gray-700);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.extract-panel .button {
+  width: fit-content;
+}
+.extract-preview {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--white);
+}
+.extract-preview strong {
+  color: var(--blue);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.extract-preview p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--gray-700);
+  font-size: 13px;
+  line-height: 1.7;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 .form-footer {
   display: flex;

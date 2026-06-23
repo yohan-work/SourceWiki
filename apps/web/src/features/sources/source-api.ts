@@ -2,6 +2,8 @@ import type {
   CommentListResponse,
   CommentRequest,
   CommentResponse,
+  ExtractUrlRequest,
+  ExtractUrlResponse,
   SourceCreateRequest,
   SourceDetailResponse,
   SourceListResponse,
@@ -29,6 +31,12 @@ export const sourceApi = {
       body: JSON.stringify(input),
     }),
   remove: (id: string) => apiFetch<void>(`/api/sources/${id}`, { method: 'DELETE' }),
+  extractUrl: (input: ExtractUrlRequest) =>
+    apiFetch<ExtractUrlResponse>(
+      '/api/tools/extract-url',
+      { method: 'POST', body: JSON.stringify(input) },
+      { timeoutMs: 15_000 },
+    ),
   comments: (id: string) => apiFetch<CommentListResponse>(`/api/sources/${id}/comments`),
   createComment: (id: string, input: CommentRequest) =>
     apiFetch<CommentResponse>(`/api/sources/${id}/comments`, {
