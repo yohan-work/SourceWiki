@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   apiErrorResponseSchema,
+  extractUrlRequestSchema,
   healthResponseSchema,
   paginationQuerySchema,
   publicHttpUrlSchema,
@@ -51,5 +52,11 @@ describe('shared API schemas', () => {
 
   it('rejects an empty source patch', () => {
     expect(sourceUpdateRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('normalizes fragment-only client URL parts for extraction previews', () => {
+    expect(extractUrlRequestSchema.parse({ url: 'https://docs.example.com/page#section' })).toEqual(
+      { url: 'https://docs.example.com/page' },
+    );
   });
 });

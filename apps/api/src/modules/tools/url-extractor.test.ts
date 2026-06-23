@@ -81,6 +81,16 @@ describe('url extractor', () => {
     expect(result.rawText).not.toContain('<article>');
   });
 
+  it('strips URL fragments before fetching and returning the final URL', async () => {
+    mockRequest(
+      response({ body: 'Fragment URLs still point at the same document body. '.repeat(8) }),
+    );
+
+    const result = await extractUrl('https://example.com/article#install');
+
+    expect(result.finalUrl).toBe('https://example.com/article');
+  });
+
   it('revalidates redirects before downloading the target', async () => {
     mockRequest(
       response({ body: '', location: 'https://docs.example.com/docs/page', statusCode: 302 }),

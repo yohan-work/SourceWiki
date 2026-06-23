@@ -98,6 +98,31 @@ export const publicHttpUrlSchema = z
     }
   }, '공개 HTTP(S) URL을 입력해 주세요.');
 
+const extractableHttpUrlSchema = z
+  .string()
+  .trim()
+  .min(1, 'URL을 입력해 주세요.')
+  .max(2048, 'URL은 2,048자 이하여야 합니다.')
+  .transform((value, context) => {
+    try {
+      const url = new URL(value);
+      if (
+        (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+        url.username ||
+        url.password ||
+        blockedHost.test(url.hostname)
+      ) {
+        context.addIssue({ code: 'custom', message: '공개 HTTP(S) URL을 입력해 주세요.' });
+        return z.NEVER;
+      }
+      url.hash = '';
+      return url.toString();
+    } catch {
+      context.addIssue({ code: 'custom', message: '공개 HTTP(S) URL을 입력해 주세요.' });
+      return z.NEVER;
+    }
+  });
+
 export const tagNameSchema = z.string().trim().min(1).max(30);
 export const keyPointSchema = z.string().trim().min(1).max(500);
 export const keywordSchema = z.string().trim().min(1).max(100);
@@ -137,7 +162,7 @@ export const paginationSchema = z.object({
   totalPages: z.number().int(),
 });
 
-export const extractUrlRequestSchema = z.object({ url: publicHttpUrlSchema });
+export const extractUrlRequestSchema = z.object({ url: extractableHttpUrlSchema });
 export const extractUrlResponseSchema = z.object({
   data: z.object({
     finalUrl: z.url(),

@@ -44,8 +44,9 @@ function validateUrl(rawUrl: string, base?: URL) {
   }
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') invalidUrl();
-  if (url.username || url.password || url.hash) invalidUrl();
+  if (url.username || url.password) invalidUrl();
   if (!ALLOWED_PORTS.has(url.port)) invalidUrl();
+  url.hash = '';
   return url;
 }
 

@@ -166,6 +166,11 @@ export function SourceForm({ id }: { id?: string }) {
 
   const handleExtract = () => {
     clearErrors('root');
+    if (!getValues('originalUrl').trim()) {
+      setExtractPreview(null);
+      setError('originalUrl', { message: 'URL을 입력해 주세요.' });
+      return;
+    }
     extractMutation.mutate();
   };
 
