@@ -15,14 +15,17 @@
     "typecheck": "pnpm --filter @sourcewiki/shared build && pnpm --filter @sourcewiki/api typecheck && pnpm --filter @sourcewiki/web typecheck",
     "pretest": "pnpm --filter @sourcewiki/shared build",
     "test": "pnpm -r test",
+    "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "db:generate": "pnpm --filter @sourcewiki/api db:generate",
-    "db:deploy": "pnpm --filter @sourcewiki/api db:deploy"
+    "db:deploy": "pnpm --filter @sourcewiki/api db:deploy",
+    "db:seed": "pnpm --filter @sourcewiki/api db:seed"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@types/node": "^24.0.0",
     "eslint": "^9.39.0",
     "eslint-config-next": "16.2.9",
