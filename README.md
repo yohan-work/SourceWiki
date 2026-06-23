@@ -1,6 +1,6 @@
 # SourceLink Wiki
 
-AI 기술 자료의 출처와 맥락을 함께 쌓는 공개 지식 아카이브입니다. 현재 이메일 인증, 회전형 JWT 세션, 로그인 상태 복구를 포함한 Phase 2 인증 흐름을 제공합니다.
+AI 기술 자료의 출처와 맥락을 함께 쌓는 공개 지식 아카이브입니다. 현재 이메일 인증, 회전형 JWT 세션, 자료·댓글 CRUD, 서버 페이징, Swagger/OpenAPI를 제공합니다.
 
 ## 요구 환경
 
@@ -22,12 +22,16 @@ pnpm install
 cp .env.example .env
 pnpm dev:infra
 pnpm db:deploy
+pnpm db:seed # 선택: 시연 계정 2명과 자료 13개 생성
 pnpm dev
 ```
 
 - Web: http://localhost:3000
 - API live: http://localhost:4000/api/health/live
 - API ready: http://localhost:4000/api/health/ready
+- 자료 목록: http://localhost:3000/sources
+- Swagger UI: http://localhost:4000/api/docs
+- OpenAPI: http://localhost:4000/api/openapi.json
 - Mailpit: http://localhost:8025
 
 Web의 `/api/*` 요청은 Next.js rewrite를 통해 API로 전달됩니다.
@@ -51,12 +55,28 @@ pnpm docker:up
 
 실행 방식별 접속 주소, Mailpit 사용법, 회원·인증 토큰·세션 DB 조회, 쿠키 확인과 문제 해결은 [`docs/12-authentication-development-guide.md`](docs/12-authentication-development-guide.md)를 참고합니다.
 
+## 자료·댓글 흐름
+
+- 공개 조회: `/sources`, `/sources/[id]`에서 비회원도 자료와 댓글을 볼 수 있습니다.
+- 작성: 이메일 인증 완료 사용자가 `/sources/new`에서 URL, 제목, 본문, 태그, 메모를 저장합니다.
+- 수정·삭제: 작성자만 `/sources/[id]/edit`과 상세 화면의 삭제 동작을 사용할 수 있으며 API가 최종 권한을 검증합니다.
+- 댓글: 상세 화면에서 인증 사용자가 작성하고 작성자만 수정·삭제합니다.
+- 페이징: `page`, `limit` 기반 서버 페이징이며 seed 데이터는 2페이지 이상 확인할 수 있도록 13개 자료를 만듭니다.
+
+개발 seed 계정은 다음과 같습니다. 비밀번호는 `SEED_USER_PASSWORD`이며 기본값은 `sourcewiki-demo-password`입니다.
+
+```text
+archive.owner@example.test
+curious.reader@example.test
+```
+
 ## 검증 명령
 
 ```bash
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:e2e
 pnpm build
 pnpm format:check
 docker compose config --quiet
@@ -65,8 +85,8 @@ docker compose config --quiet
 ## 모노레포 구조
 
 ```text
-apps/web             Next.js App Router와 서비스 셸
-apps/api             Express API, Prisma, health/auth endpoint
+apps/web             Next.js App Router, 인증·자료·댓글 화면
+apps/api             Express API, Prisma, health/auth/source/comment/OpenAPI endpoint
 packages/shared      API schema와 공유 TypeScript 타입
 infra/Caddyfile      same-origin reverse proxy
 compose.yaml         web/api/db/Mailpit/Caddy 로컬 stack
@@ -82,5 +102,7 @@ docs                 제품·기술 설계 문서
 
 - `GET /api/health/live`: API process가 요청을 받을 수 있는지 확인
 - `GET /api/health/ready`: 실제 PostgreSQL `SELECT 1` 연결 확인
+- `GET /api/openapi.json`: OpenAPI 3.1 문서
+- `GET /api/docs`: Swagger UI
 
 모든 응답에는 추적 가능한 `requestId`가 포함됩니다. Ollama는 이후 Phase에서도 핵심 서비스 readiness 조건에 포함하지 않습니다.

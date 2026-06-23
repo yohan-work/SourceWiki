@@ -64,9 +64,38 @@ jobs:
           curl --fail --retry 5 --retry-delay 2 http://localhost:8080/
           curl --fail http://localhost:8080/api/health/live
           curl --fail http://localhost:8080/api/health/ready
+          curl --fail http://localhost:8080/api/sources
+          curl --fail http://localhost:8080/api/openapi.json
+          curl --fail http://localhost:8080/api/docs/
       - name: Show service logs on failure
         if: failure()
         run: docker compose logs
       - name: Stop stack
         if: always()
+        run: docker compose down --volumes
+
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://sourcewiki:sourcewiki_local@localhost:5432/sourcewiki?schema=public
+      SEED_USER_PASSWORD: sourcewiki-demo-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.16.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm dev:infra
+      - run: pnpm db:deploy
+      - run: pnpm db:seed
+      - run: pnpm test:e2e
+      - if: always()
         run: docker compose down --volumes
