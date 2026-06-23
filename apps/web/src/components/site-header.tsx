@@ -12,7 +12,8 @@ export function SiteHeader() {
       </Link>
 
       <nav className="site-nav" aria-label="주요 메뉴">
-        <Link href="/#how-it-works">서비스 소개</Link>
+        <Link href="/sources">자료 목록</Link>
+        <Link href="/sources/new">자료 등록</Link>
         <AuthActions />
       </nav>
     </header>

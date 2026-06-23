@@ -1,4 +1,9 @@
 import { SystemStatus } from '@/features/system-status/system-status';
+import type { SourceListResponse } from '@sourcewiki/shared';
+import Link from 'next/link';
+import { serverApiFetch } from '@/lib/api/server-api';
+
+export const dynamic = 'force-dynamic';
 
 const principles = [
   {
@@ -15,7 +20,16 @@ const principles = [
   },
 ] as const;
 
-export default function Home() {
+async function loadRecentSources() {
+  try {
+    return await serverApiFetch<SourceListResponse>('/api/sources?page=1&limit=3');
+  } catch {
+    return null;
+  }
+}
+
+export default async function Home() {
+  const recentSources = await loadRecentSources();
   return (
     <>
       <section className="hero" aria-labelledby="hero-title">
@@ -63,7 +77,11 @@ export default function Home() {
         <div className="section-heading">
           <p>SourceLink Wiki</p>
           <h2 id="features-title">링크 하나로 시작해요</h2>
-          <span>자료를 저장하고 정리하는 데 필요한 기능만 담았습니다.</span>
+          <span>
+            {recentSources
+              ? `${recentSources.pagination.totalItems}개의 자료가 저장되어 있습니다.`
+              : '자료를 저장하고 정리하는 데 필요한 기능만 담았습니다.'}
+          </span>
         </div>
 
         <div className="feature-list">
@@ -76,6 +94,25 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {recentSources ? (
+        <section className="recent-sources" aria-labelledby="recent-sources-title">
+          <div className="section-heading">
+            <p>RECENT SOURCES</p>
+            <h2 id="recent-sources-title">방금 정리된 자료</h2>
+            <span>최근 저장된 기술 자료를 빠르게 살펴보세요.</span>
+          </div>
+          <div className="recent-source-list">
+            {recentSources.data.map((source) => (
+              <Link key={source.id} href={`/sources/${source.id}`}>
+                <span>{source.sourceDomain}</span>
+                <strong>{source.title}</strong>
+                <small>{source.author.nickname}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section id="system-status" className="status-section" aria-labelledby="status-title">
         <div className="status-section__heading">

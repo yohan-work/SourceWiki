@@ -8,6 +8,12 @@ import type {
 import { apiFetch } from '@/lib/api/api-client';
 
 export const authApi = {
+  checkEmail: (email: string) =>
+    apiFetch<{ data: { available: boolean } }>(
+      '/api/auth/check-email',
+      { method: 'POST', body: JSON.stringify({ email }) },
+      { retryAuth: false },
+    ),
   me: () => apiFetch<AuthUserResponse>('/api/auth/me'),
   signup: (input: SignupRequest) =>
     apiFetch<AuthUserResponse>(

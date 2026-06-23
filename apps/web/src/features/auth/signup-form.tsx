@@ -23,6 +23,7 @@ export function SignupForm() {
     register,
     handleSubmit,
     setError,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,7 +53,22 @@ export function SignupForm() {
         </div>
       ) : null}
       <FormField label="이메일" error={errors.email?.message}>
-        <input autoComplete="email" inputMode="email" {...register('email')} />
+        <input
+          autoComplete="email"
+          inputMode="email"
+          {...register('email')}
+          onBlur={async () => {
+            const email = getValues('email');
+            if (!email) return;
+            try {
+              const result = await authApi.checkEmail(email);
+              if (!result.data.available)
+                setError('email', { message: '이미 사용 중인 이메일입니다.' });
+            } catch {
+              /* 가입 API가 최종 검증합니다. */
+            }
+          }}
+        />
       </FormField>
       <FormField label="닉네임" hint="자료와 댓글에 표시됩니다." error={errors.nickname?.message}>
         <input autoComplete="nickname" {...register('nickname')} />
