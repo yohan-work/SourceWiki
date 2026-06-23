@@ -5,6 +5,7 @@ const STOP_WORDS = new Set([
   '대해',
   '이번',
   '있는',
+  '있습니다',
   '있다',
   '했다',
   '한다',
@@ -17,6 +18,13 @@ const STOP_WORDS = new Set([
   '기자',
   '사진',
   '제공',
+  '값을',
+  '단계',
+  '경우',
+  '때문',
+  '사용',
+  '설정',
+  '오픈',
   '밝혔다',
   '것으로',
   '것이다',
@@ -30,6 +38,20 @@ const STOP_WORDS = new Set([
   'article',
   'news',
   'source',
+  'set',
+  'const',
+  'let',
+  'var',
+  'function',
+  'return',
+  'string',
+  'number',
+  'boolean',
+  'object',
+  'array',
+  'value',
+  'values',
+  'gpt',
 ]);
 
 const KNOWN_TERMS: [RegExp, string][] = [
@@ -66,12 +88,25 @@ function normalizedTag(value: string) {
 function addTag(tags: Map<string, string>, value: string) {
   const display = value.trim().replace(/\s+/g, ' ');
   const normalized = normalizedTag(display);
-  if (!display || display.length > 30 || tags.has(normalized)) return;
+  if (!display || display.length > 30 || STOP_WORDS.has(normalized) || tags.has(normalized)) return;
   tags.set(normalized, display);
 }
 
 function tokenize(value: string) {
   return value.match(/[A-Za-z][A-Za-z0-9+#.-]{1,28}|[가-힣]{2,12}/g) ?? [];
+}
+
+function isWeakKoreanToken(value: string) {
+  return (
+    /^[가-힣]{2,12}$/.test(value) &&
+    /(을|를|은|는|이|가|에|의|로|으로|와|과|도|만|에서|에게|부터|까지|합니다|습니다|된다|했다|한다|하는|있는|없는|된다|와|과)$/.test(
+      value,
+    )
+  );
+}
+
+function isWeakEnglishToken(value: string) {
+  return /^[a-z][a-z0-9.-]*$/.test(value) && value.length < 6;
 }
 
 function frequentTerms(title: string | null, rawText: string) {
@@ -87,7 +122,9 @@ function frequentTerms(title: string | null, rawText: string) {
         normalized.length < 2 ||
         /^\d+$/.test(normalized) ||
         STOP_WORDS.has(normalized) ||
-        STOP_WORDS.has(display)
+        STOP_WORDS.has(display) ||
+        isWeakKoreanToken(display) ||
+        isWeakEnglishToken(display)
       )
         continue;
       const current = scores.get(normalized);
@@ -98,6 +135,7 @@ function frequentTerms(title: string | null, rawText: string) {
     }
   }
   return [...scores.values()]
+    .filter(({ score }) => score >= 2)
     .sort((left, right) => right.score - left.score || left.display.localeCompare(right.display))
     .map(({ display }) => display);
 }
@@ -109,7 +147,6 @@ export function suggestTags(input: {
   rawText: string;
 }) {
   const tags = new Map<string, string>();
-  if (input.sourceType !== 'other') addTag(tags, input.sourceType);
   for (const [pattern, tag] of DOMAIN_TAGS) {
     if (pattern.test(input.domain)) addTag(tags, tag);
   }

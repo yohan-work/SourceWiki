@@ -101,7 +101,7 @@ describe('url extractor', () => {
       title: 'Public Article',
       truncated: false,
     });
-    expect(result.suggestedTags).toContain('article');
+    expect(result.suggestedTags).not.toContain('article');
     expect(result.rawText).toContain('SourceWiki extracts public article text');
     expect(result.rawText).not.toContain('<article>');
   });
@@ -116,7 +116,10 @@ describe('url extractor', () => {
     const result = await extractUrl('https://www.aitimes.com/news/articleView.html?idxno=1');
 
     expect(result.suggestedTags).toEqual(
-      expect.arrayContaining(['article', 'AI', 'OpenAI', 'ChatGPT', 'Codex', '삼성전자']),
+      expect.arrayContaining(['AI', 'OpenAI', 'ChatGPT', 'Codex', '삼성전자']),
+    );
+    expect(result.suggestedTags).not.toEqual(
+      expect.arrayContaining(['엔터프라이즈와', '임직원에게']),
     );
   });
 
