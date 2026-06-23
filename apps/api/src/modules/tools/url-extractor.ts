@@ -16,6 +16,12 @@ const MIN_TEXT_CHARS = 200;
 const ALLOWED_PORTS = new Set(['', '80', '443']);
 
 type SourceType = 'article' | 'docs' | 'paper' | 'github' | 'other';
+type LookupOptions = number | { all?: boolean };
+type LookupCallback = (
+  error: NodeJS.ErrnoException | null,
+  address: string | { address: string; family: number }[],
+  family?: number,
+) => void;
 
 interface DownloadedBody {
   finalUrl: URL;
@@ -74,19 +80,32 @@ async function resolvePublicAddresses(hostname: string) {
   return records;
 }
 
+function fixedLookup(address: string, family: number) {
+  return (_hostname: string, options: LookupOptions, callback: LookupCallback) => {
+    if (typeof options === 'object' && options.all) {
+      callback(null, [{ address, family }]);
+      return;
+    }
+    callback(null, address, family);
+  };
+}
+
 function requestBody(url: URL, address: string, signal: AbortSignal) {
   return new Promise<http.IncomingMessage>((resolve, reject) => {
     const client = url.protocol === 'https:' ? https : http;
+    const family = ipaddr.parse(address).kind() === 'ipv6' ? 6 : 4;
     const request = client.request(
       url,
       {
         agent: false,
         headers: {
-          Accept: 'text/html,text/plain;q=0.9',
-          'User-Agent': 'SourceWikiBot/0.1 (+https://sourcewiki.local)',
+          Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.6,en;q=0.4',
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
         },
-        lookup: (_hostname, _options, callback) =>
-          callback(null, address, ipaddr.parse(address).kind() === 'ipv6' ? 6 : 4),
+        lookup: fixedLookup(address, family),
+        servername: url.protocol === 'https:' ? url.hostname : undefined,
         timeout: TIMEOUT_MS,
       },
       resolve,
@@ -119,9 +138,23 @@ async function readLimitedBody(response: http.IncomingMessage, signal: AbortSign
 
 async function download(url: URL, signal: AbortSignal, redirects = 0): Promise<DownloadedBody> {
   const records = await resolvePublicAddresses(url.hostname);
-  const firstRecord = records[0];
-  if (!firstRecord) blockedUrl();
-  const response = await requestBody(url, firstRecord.address, signal);
+  let response: http.IncomingMessage | null = null;
+  let connectionError: unknown = null;
+  for (const record of records) {
+    try {
+      response = await requestBody(url, record.address, signal);
+      break;
+    } catch (error) {
+      connectionError = error;
+      if (error instanceof AppError) throw error;
+    }
+  }
+  if (!response) {
+    if (signal.aborted) timeoutError();
+    throw connectionError instanceof AppError
+      ? connectionError
+      : new AppError(422, 'EXTRACTION_FAILED', '본문을 가져오지 못했습니다.');
+  }
 
   if (
     response.statusCode &&

@@ -12,6 +12,18 @@ vi.mock('node:dns/promises', () => ({ lookup: mocks.lookup }));
 vi.mock('node:http', () => ({ default: { request: mocks.httpRequest } }));
 vi.mock('node:https', () => ({ default: { request: mocks.httpsRequest } }));
 
+interface RequestOptions {
+  lookup?: (
+    hostname: string,
+    options: { all?: boolean },
+    callback: (
+      error: Error | null,
+      address: string | { address: string; family: number }[],
+      family?: number,
+    ) => void,
+  ) => void;
+}
+
 const { extractUrl } = await import('./url-extractor.js');
 
 function response({
@@ -39,14 +51,26 @@ function response({
 function mockRequest(...responses: ReturnType<typeof response>[]) {
   const queue = [...responses];
   const implementation = vi.fn(
-    (_url: URL, _options: object, callback: (value: unknown) => void) => {
+    (_url: URL, options: RequestOptions, callback: (value: unknown) => void) => {
       const request = new EventEmitter() as EventEmitter & {
         destroy: (error: Error) => void;
         end: () => void;
         setTimeout?: () => void;
       };
       request.destroy = (error) => request.emit('error', error);
-      request.end = () => callback(queue.shift());
+      request.end = () => {
+        options.lookup?.('example.com', { all: true }, (error, addresses) => {
+          if (error) {
+            request.emit('error', error);
+            return;
+          }
+          if (!Array.isArray(addresses)) {
+            request.emit('error', new Error('lookup did not return all addresses'));
+            return;
+          }
+          callback(queue.shift());
+        });
+      };
       return request;
     },
   );
@@ -103,6 +127,54 @@ describe('url extractor', () => {
     expect(result.sourceType).toBe('docs');
     expect(mocks.lookup).toHaveBeenCalledWith('example.com', { all: true, verbatim: true });
     expect(mocks.lookup).toHaveBeenCalledWith('docs.example.com', { all: true, verbatim: true });
+  });
+
+  it('tries another resolved address when the first connection fails', async () => {
+    mocks.lookup.mockResolvedValue([
+      { address: '2001:4860:4860::8888', family: 6 },
+      { address: '93.184.216.34', family: 4 },
+    ]);
+    const implementation = vi
+      .fn()
+      .mockImplementationOnce(() => {
+        const request = new EventEmitter() as EventEmitter & {
+          destroy: (error: Error) => void;
+          end: () => void;
+        };
+        request.destroy = (error) => request.emit('error', error);
+        request.end = () => request.emit('error', new Error('network unreachable'));
+        return request;
+      })
+      .mockImplementationOnce(
+        (_url: URL, options: RequestOptions, callback: (value: unknown) => void) => {
+          const request = new EventEmitter() as EventEmitter & {
+            destroy: (error: Error) => void;
+            end: () => void;
+          };
+          request.destroy = (error) => request.emit('error', error);
+          request.end = () =>
+            options.lookup?.('example.com', { all: true }, (error, addresses) => {
+              if (error) {
+                request.emit('error', error);
+                return;
+              }
+              if (!Array.isArray(addresses)) {
+                request.emit('error', new Error('lookup did not return all addresses'));
+                return;
+              }
+              callback(
+                response({ body: 'Second resolved address returns article text. '.repeat(8) }),
+              );
+            });
+          return request;
+        },
+      );
+    mocks.httpsRequest.mockImplementation(implementation);
+
+    const result = await extractUrl('https://example.com/article');
+
+    expect(result.rawText).toContain('Second resolved address');
+    expect(implementation).toHaveBeenCalledTimes(2);
   });
 
   it('blocks URLs that resolve to private addresses', async () => {

@@ -4,7 +4,6 @@ import {
   commentListResponseSchema,
   commentRequestSchema,
   commentResponseSchema,
-  extractUrlRequestSchema,
   extractUrlResponseSchema,
   sourceCreateRequestSchema,
   sourceDetailResponseSchema,
@@ -49,7 +48,19 @@ export const openApiDocument = {
       CommentRequest: schema(commentRequestSchema),
       CommentResponse: schema(commentResponseSchema),
       CommentListResponse: schema(commentListResponseSchema),
-      ExtractUrlRequest: schema(extractUrlRequestSchema),
+      ExtractUrlRequest: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['url'],
+        properties: {
+          url: {
+            type: 'string',
+            format: 'uri',
+            maxLength: 2048,
+            description: '본문을 미리 추출할 공개 HTTP(S) URL',
+          },
+        },
+      },
       ExtractUrlResponse: schema(extractUrlResponseSchema),
     },
   },

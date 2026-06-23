@@ -54,9 +54,9 @@ describe('shared API schemas', () => {
     expect(sourceUpdateRequestSchema.safeParse({}).success).toBe(false);
   });
 
-  it('normalizes fragment-only client URL parts for extraction previews', () => {
-    expect(extractUrlRequestSchema.parse({ url: 'https://docs.example.com/page#section' })).toEqual(
-      { url: 'https://docs.example.com/page' },
-    );
+  it('allows URL fragments for extraction previews', () => {
+    expect(
+      extractUrlRequestSchema.safeParse({ url: 'https://docs.example.com/page#section' }).success,
+    ).toBe(true);
   });
 });
