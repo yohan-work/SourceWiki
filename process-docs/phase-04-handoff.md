@@ -24,6 +24,7 @@
 - 추출 성공 시 `title`, `originalUrl`, `sourceType`, `rawText`, 빈 태그 입력칸 자동 채움
 - 추출 실패 시 기존 입력 유지와 수동 저장 fallback 유지
 - 상세 화면에서 공유 태그 기반 관련 자료 최대 5개 표시
+- GitHub Actions CI DB 연결 안정화: `DATABASE_URL`을 `127.0.0.1`로 고정하고 migration 전 PostgreSQL readiness wait 추가
 - extractor unit test와 OpenAPI path test 추가
 
 ## 실행
@@ -63,6 +64,7 @@ curious.reader@example.test / sourcewiki-demo-password
 - 성공: `pnpm format:check`
 - 성공: `docker compose config --quiet`
 - 성공: `git diff --check`
+- 성공: `.github/workflows/ci.yml` Prettier check와 `git diff --check .github/workflows/ci.yml`
 - 성공: `pnpm --filter @sourcewiki/api exec vitest run src/modules/tools/url-extractor.test.ts src/openapi/document.test.ts`
 - 성공: `pnpm --filter @sourcewiki/api exec vitest run src/modules/tools/tag-suggester.test.ts src/modules/tools/url-extractor.test.ts`
 - 성공: `pnpm test`에서 source related 자료 통합 테스트 포함 19개 API 테스트 통과
@@ -118,6 +120,7 @@ apps/web/src/features/sources/source-api.ts
 apps/web/src/features/sources/source-form.tsx
 apps/web/src/features/sources/source-detail-view.tsx
 packages/shared/src/index.ts
+.github/workflows/ci.yml
 pnpm-lock.yaml
 ```
 
@@ -144,6 +147,7 @@ ipaddr.js
 - Node `https.request`는 내부에서 custom lookup을 `all: true` 옵션으로 호출할 수 있다. fixed IP 연결을 유지하려면 callback이 `[{ address, family }]` 형태도 지원해야 한다.
 - AI타임스 422 원인은 사이트 규제가 아니라 custom lookup callback contract 불일치였다. GET 요청 자체는 200 HTML을 반환하며 수정 후 extractor 직접 호출은 성공했다.
 - `pnpm test`는 sandbox 안에서 supertest listen 제한으로 실패할 수 있어, 이번에는 승인된 일반 실행으로 통과를 확인했다.
+- CI `pnpm db:deploy`에서 `localhost:5432` 연결 실패가 발생했다. GitHub Actions에서는 DB URL을 `127.0.0.1`로 고정하고 `pg_isready` wait 후 migration을 실행한다.
 - Swagger UI `/api/docs`는 Phase 3에서 언급된 helmet CSP 주의점이 여전히 남아 있다. OpenAPI JSON과 document validation은 통과했다.
 - E2E runner 안정성 이슈는 Phase 3 handoff와 동일하게 CI 또는 일반 터미널에서 계속 최종 확인 대상이다.
 
