@@ -18,8 +18,99 @@ model User {
 
   verificationTokens EmailVerificationToken[]
   refreshSessions    RefreshSession[]
+  sources            Source[]
+  comments           Comment[]
 
   @@map("users")
+}
+
+enum SourceType {
+  article
+  docs
+  paper
+  github
+  other
+
+  @@map("source_type")
+}
+
+enum ExtractionStatus {
+  not_requested
+  succeeded
+  failed
+
+  @@map("extraction_status")
+}
+
+enum SummaryStatus {
+  not_requested
+  succeeded
+  failed
+  demo
+
+  @@map("summary_status")
+}
+
+model Source {
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @map("user_id") @db.Uuid
+  title            String           @db.VarChar(200)
+  originalUrl      String           @map("original_url") @db.VarChar(2048)
+  sourceDomain     String           @map("source_domain") @db.VarChar(253)
+  sourceType       SourceType       @default(other) @map("source_type")
+  rawText          String?          @map("raw_text")
+  rawTextPreview   String?          @map("raw_text_preview") @db.VarChar(300)
+  summary          String?
+  keyPoints        Json             @default("[]") @map("key_points") @db.JsonB
+  keywords         Json             @default("[]") @db.JsonB
+  personalNote     String?          @map("personal_note")
+  extractionStatus ExtractionStatus @default(not_requested) @map("extraction_status")
+  summaryStatus    SummaryStatus    @default(not_requested) @map("summary_status")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  comments         Comment[]
+  sourceTags       SourceTag[]
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId])
+  @@map("sources")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  sourceId  String   @map("source_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String   @db.VarChar(2000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  source    Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([sourceId, createdAt, id])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Tag {
+  id             String      @id @default(uuid()) @db.Uuid
+  name           String      @db.VarChar(30)
+  normalizedName String      @unique @map("normalized_name") @db.VarChar(30)
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  sourceTags     SourceTag[]
+
+  @@map("tags")
+}
+
+model SourceTag {
+  sourceId String @map("source_id") @db.Uuid
+  tagId    String @map("tag_id") @db.Uuid
+  source   Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([sourceId, tagId])
+  @@index([tagId])
+  @@map("source_tags")
 }
 
 model EmailVerificationToken {

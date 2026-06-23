@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { apiErrorResponseSchema, healthResponseSchema, signupRequestSchema } from './index.js';
+import {
+  apiErrorResponseSchema,
+  healthResponseSchema,
+  paginationQuerySchema,
+  publicHttpUrlSchema,
+  signupRequestSchema,
+  sourceUpdateRequestSchema,
+} from './index.js';
 
 describe('shared API schemas', () => {
   it('accepts a readiness response', () => {
@@ -32,5 +39,17 @@ describe('shared API schemas', () => {
       password: 'password123',
     });
     expect(result.email).toBe('user@example.com');
+  });
+
+  it('validates public source URLs and pagination boundaries', () => {
+    expect(publicHttpUrlSchema.safeParse('https://docs.example.com/path').success).toBe(true);
+    expect(publicHttpUrlSchema.safeParse('http://127.0.0.1/private').success).toBe(false);
+    expect(publicHttpUrlSchema.safeParse('https://user:pass@example.com').success).toBe(false);
+    expect(paginationQuerySchema.parse({})).toEqual({ page: 1, limit: 12 });
+    expect(paginationQuerySchema.safeParse({ page: 0, limit: 51 }).success).toBe(false);
+  });
+
+  it('rejects an empty source patch', () => {
+    expect(sourceUpdateRequestSchema.safeParse({}).success).toBe(false);
   });
 });

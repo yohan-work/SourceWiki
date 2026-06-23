@@ -73,6 +73,123 @@ export const authMessageResponseSchema = z.object({
   meta: apiMetaSchema,
 });
 
+export const sourceTypeSchema = z.enum(['article', 'docs', 'paper', 'github', 'other']);
+export const extractionStatusSchema = z.enum(['not_requested', 'succeeded', 'failed']);
+export const summaryStatusSchema = z.enum(['not_requested', 'succeeded', 'failed', 'demo']);
+
+const blockedHost =
+  /^(localhost|.*\.localhost|.*\.local|0\.0\.0\.0|127(?:\.\d{1,3}){3}|10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|169\.254(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|\[?::1\]?)$/i;
+export const publicHttpUrlSchema = z
+  .string()
+  .trim()
+  .min(1, 'URL을 입력해 주세요.')
+  .max(2048, 'URL은 2,048자 이하여야 합니다.')
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return (
+        (url.protocol === 'http:' || url.protocol === 'https:') &&
+        !url.username &&
+        !url.password &&
+        !blockedHost.test(url.hostname)
+      );
+    } catch {
+      return false;
+    }
+  }, '공개 HTTP(S) URL을 입력해 주세요.');
+
+export const tagNameSchema = z.string().trim().min(1).max(30);
+export const keyPointSchema = z.string().trim().min(1).max(500);
+export const keywordSchema = z.string().trim().min(1).max(100);
+export const sourceCreateRequestSchema = z.object({
+  title: z.string().trim().min(1, '제목을 입력해 주세요.').max(200),
+  originalUrl: publicHttpUrlSchema,
+  sourceType: sourceTypeSchema.default('other'),
+  rawText: z.string().trim().max(100_000).optional(),
+  personalNote: z.string().trim().max(10_000).optional(),
+  tags: z.array(tagNameSchema).max(10).default([]),
+});
+export const sourceUpdateRequestSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    originalUrl: publicHttpUrlSchema.optional(),
+    sourceType: sourceTypeSchema.optional(),
+    rawText: z.string().trim().max(100_000).nullable().optional(),
+    summary: z.string().trim().max(10_000).nullable().optional(),
+    keyPoints: z.array(keyPointSchema).max(10).optional(),
+    keywords: z.array(keywordSchema).max(20).optional(),
+    personalNote: z.string().trim().max(10_000).nullable().optional(),
+    tags: z.array(tagNameSchema).max(10).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: '수정할 값을 한 개 이상 입력해 주세요.',
+    path: ['form'],
+  });
+
+export const paginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+});
+export const paginationSchema = z.object({
+  page: z.number().int(),
+  limit: z.number().int(),
+  totalItems: z.number().int(),
+  totalPages: z.number().int(),
+});
+export const authorSchema = z.object({ id: z.uuid(), nickname: z.string() });
+export const tagSchema = z.object({ id: z.uuid(), name: z.string() });
+export const sourceListItemSchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  originalUrl: z.url(),
+  sourceDomain: z.string(),
+  sourceType: sourceTypeSchema,
+  summaryPreview: z.string().nullable(),
+  rawTextPreview: z.string().nullable(),
+  tags: z.array(tagSchema),
+  author: authorSchema,
+  commentCount: z.number().int(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const sourceDetailSchema = sourceListItemSchema.extend({
+  rawText: z.string().nullable(),
+  summary: z.string().nullable(),
+  keyPoints: z.array(z.string()),
+  keywords: z.array(z.string()),
+  personalNote: z.string().nullable(),
+  extractionStatus: extractionStatusSchema,
+  summaryStatus: summaryStatusSchema,
+  isOwner: z.boolean(),
+});
+export const sourceListResponseSchema = z.object({
+  data: z.array(sourceListItemSchema),
+  pagination: paginationSchema,
+  meta: apiMetaSchema,
+});
+export const sourceDetailResponseSchema = z.object({
+  data: sourceDetailSchema,
+  meta: apiMetaSchema,
+});
+
+export const commentRequestSchema = z.object({
+  content: z.string().trim().min(1, '댓글을 입력해 주세요.').max(2000),
+});
+export const commentSchema = z.object({
+  id: z.uuid(),
+  sourceId: z.uuid(),
+  content: z.string(),
+  author: authorSchema,
+  isOwner: z.boolean(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const commentResponseSchema = z.object({ data: commentSchema, meta: apiMetaSchema });
+export const commentListResponseSchema = z.object({
+  data: z.array(commentSchema),
+  meta: apiMetaSchema,
+});
+
 export type HealthData = z.infer<typeof healthDataSchema>;
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
@@ -83,3 +200,15 @@ export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
 export type ResendVerificationRequest = z.infer<typeof resendVerificationRequestSchema>;
 export type AuthUser = z.infer<typeof authUserSchema>;
 export type AuthUserResponse = z.infer<typeof authUserResponseSchema>;
+export type SourceType = z.infer<typeof sourceTypeSchema>;
+export type SourceCreateRequest = z.infer<typeof sourceCreateRequestSchema>;
+export type SourceUpdateRequest = z.infer<typeof sourceUpdateRequestSchema>;
+export type SourceListItem = z.infer<typeof sourceListItemSchema>;
+export type SourceDetail = z.infer<typeof sourceDetailSchema>;
+export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
+export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
+export type Pagination = z.infer<typeof paginationSchema>;
+export type CommentRequest = z.infer<typeof commentRequestSchema>;
+export type SourceComment = z.infer<typeof commentSchema>;
+export type CommentResponse = z.infer<typeof commentResponseSchema>;
+export type CommentListResponse = z.infer<typeof commentListResponseSchema>;
