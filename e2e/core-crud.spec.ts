@@ -53,9 +53,17 @@ test('signup, email verification, and session restoration', async ({ page, reque
   await page.goto('/login');
   await page.getByLabel('이메일').fill(email);
   await page.getByLabel('비밀번호').fill('password123');
+  const loginResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/auth/login') && response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: '로그인' }).click();
+  expect((await loginResponse).ok()).toBe(true);
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText('브라우저검증')).toBeVisible({ timeout: 10_000 });
+
   await page.reload();
-  await expect(page.getByText('브라우저검증')).toBeVisible();
+  await expect(page.getByText('브라우저검증')).toBeVisible({ timeout: 10_000 });
 });
 
 test('source and comment CRUD enforce owner UI', async ({ page }) => {
