@@ -10,6 +10,7 @@ describe('OpenAPI document', () => {
     ).resolves.toBeTruthy();
     expect(Object.keys(openApiDocument.paths)).toEqual(
       expect.arrayContaining([
+        '/tools/extract-url',
         '/sources',
         '/sources/{id}',
         '/sources/{id}/comments',

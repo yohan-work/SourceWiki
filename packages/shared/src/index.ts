@@ -136,6 +136,21 @@ export const paginationSchema = z.object({
   totalItems: z.number().int(),
   totalPages: z.number().int(),
 });
+
+export const extractUrlRequestSchema = z.object({ url: publicHttpUrlSchema });
+export const extractUrlResponseSchema = z.object({
+  data: z.object({
+    finalUrl: z.url(),
+    title: z.string().nullable(),
+    domain: z.string(),
+    sourceType: sourceTypeSchema,
+    rawText: z.string(),
+    preview: z.string(),
+    truncated: z.boolean(),
+  }),
+  meta: apiMetaSchema,
+});
+
 export const authorSchema = z.object({ id: z.uuid(), nickname: z.string() });
 export const tagSchema = z.object({ id: z.uuid(), name: z.string() });
 export const sourceListItemSchema = z.object({
@@ -207,6 +222,8 @@ export type SourceListItem = z.infer<typeof sourceListItemSchema>;
 export type SourceDetail = z.infer<typeof sourceDetailSchema>;
 export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
+export type ExtractUrlRequest = z.infer<typeof extractUrlRequestSchema>;
+export type ExtractUrlResponse = z.infer<typeof extractUrlResponseSchema>;
 export type Pagination = z.infer<typeof paginationSchema>;
 export type CommentRequest = z.infer<typeof commentRequestSchema>;
 export type SourceComment = z.infer<typeof commentSchema>;

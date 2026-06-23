@@ -4,6 +4,8 @@ import {
   commentListResponseSchema,
   commentRequestSchema,
   commentResponseSchema,
+  extractUrlRequestSchema,
+  extractUrlResponseSchema,
   sourceCreateRequestSchema,
   sourceDetailResponseSchema,
   sourceListResponseSchema,
@@ -47,9 +49,26 @@ export const openApiDocument = {
       CommentRequest: schema(commentRequestSchema),
       CommentResponse: schema(commentResponseSchema),
       CommentListResponse: schema(commentListResponseSchema),
+      ExtractUrlRequest: schema(extractUrlRequestSchema),
+      ExtractUrlResponse: schema(extractUrlResponseSchema),
     },
   },
   paths: {
+    '/tools/extract-url': {
+      post: {
+        tags: ['Tools'],
+        summary: 'URL 본문 미리 추출',
+        security: [{ accessCookie: [] }],
+        requestBody: { required: true, ...json('ExtractUrlRequest') },
+        responses: {
+          200: response('추출된 본문 미리보기', 'ExtractUrlResponse'),
+          ...errorResponses,
+          413: response('응답 크기 초과', 'ApiError'),
+          415: response('지원하지 않는 Content-Type', 'ApiError'),
+          504: response('추출 시간 초과', 'ApiError'),
+        },
+      },
+    },
     '/sources': {
       get: {
         tags: ['Sources'],

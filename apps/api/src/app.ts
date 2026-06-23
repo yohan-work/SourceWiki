@@ -11,6 +11,7 @@ import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createCommentRouter } from './modules/comments/comment.routes.js';
 import { createHealthRouter } from './modules/health/health.routes.js';
 import { createSourceRouter } from './modules/sources/source.routes.js';
+import { createToolsRouter } from './modules/tools/tools.routes.js';
 import { createOpenApiRouter } from './openapi/openapi.routes.js';
 
 interface AppDependencies {
@@ -34,6 +35,7 @@ export function createApp({
 
   app.use('/api/health', createHealthRouter(checkDatabase));
   app.use('/api/auth', createAuthRouter(mailer));
+  app.use('/api/tools', createToolsRouter());
   app.use('/api/sources', createSourceRouter());
   app.use('/api/comments', createCommentRouter());
   app.use('/api', createOpenApiRouter());
