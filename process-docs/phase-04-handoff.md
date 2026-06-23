@@ -18,7 +18,8 @@
 - HTTPS SNI `servername` 명시와 browser-like request headers 적용
 - HTML 본문 정제: `@mozilla/readability` + `jsdom`
 - 정제 본문 200자 미만 실패 처리, 최대 100,000자 truncation 반환
-- 규칙 기반 `suggestedTags` 생성: domain/sourceType, 알려진 AI 키워드, 제목·본문 빈도 기반 최대 10개
+- 규칙 기반 `suggestedTags` 생성: domain, 알려진 AI 키워드, 제목·본문 빈도 기반 최대 10개
+- 태그 추천 품질 필터: 조사·서술어 결합 한국어 토큰, 코드 filler 토큰, sourceType 자체 태그 제외
 - `/sources/new` 등록 화면에 `본문 가져오기` 버튼과 preview UI 추가
 - 추출 성공 시 `title`, `originalUrl`, `sourceType`, `rawText`, 빈 태그 입력칸 자동 채움
 - 추출 실패 시 기존 입력 유지와 수동 저장 fallback 유지
@@ -63,6 +64,7 @@ curious.reader@example.test / sourcewiki-demo-password
 - 성공: `docker compose config --quiet`
 - 성공: `git diff --check`
 - 성공: `pnpm --filter @sourcewiki/api exec vitest run src/modules/tools/url-extractor.test.ts src/openapi/document.test.ts`
+- 성공: `pnpm --filter @sourcewiki/api exec vitest run src/modules/tools/tag-suggester.test.ts src/modules/tools/url-extractor.test.ts`
 - 성공: `pnpm test`에서 source related 자료 통합 테스트 포함 19개 API 테스트 통과
 - 성공: 실제 공개 URL 직접 extractor smoke
   - `https://www.aitimes.com/news/articleView.html?idxno=211959`
@@ -108,6 +110,7 @@ https://www.aitimes.com/news/articleView.html?idxno=211959
 apps/api/package.json
 apps/api/src/app.ts
 apps/api/src/modules/tools/
+apps/api/src/modules/tools/tag-suggester.ts
 apps/api/src/openapi/document.ts
 apps/api/src/openapi/document.test.ts
 apps/web/src/app/globals.css
@@ -134,6 +137,7 @@ ipaddr.js
 - URL 추출 endpoint는 저장 전 preview 전용이다. 저장은 기존 `POST /sources`가 담당하며 URL 변경 시 자동 재추출하지 않는다.
 - `sourceType` 추정은 hostname/path 기반 휴리스틱이다. 사용자가 등록 화면에서 직접 수정할 수 있다.
 - `suggestedTags`는 AI가 아니라 규칙 기반 휴리스틱이다. 사용자가 저장 전 태그 입력칸에서 수정할 수 있으며, 이미 태그를 입력한 경우 자동 추천이 덮어쓰지 않는다.
+- 자동 태그는 보수적으로 필터링한다. 예: `값을`, `있습니다`, `Set`, `const`, `article`, `docs` 같은 약한 토큰은 태그로 쓰지 않는다.
 - 관련 자료는 별도 `source_links` 테이블에 저장하지 않는다. 상세 조회 시 같은 태그를 공유하는 자료를 동적으로 계산해 보여준다.
 - HTML charset은 현재 UTF-8 decoding 기준이다. 일부 legacy encoding 문서는 본문 품질이 낮을 수 있다.
 - OpenAPI 문서 생성은 Zod transform/pipe를 JSON Schema로 표현하지 못한다. `ExtractUrlRequest`는 runtime Zod schema 대신 수동 JSON Schema로 문서화한다.
