@@ -19,3 +19,15 @@ export function validateBody(schema: ZodType): RequestHandler {
     next();
   };
 }
+
+export function validateQuery(schema: ZodType): RequestHandler {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      next(new AppError(422, 'VALIDATION_ERROR', '조회 조건을 확인해 주세요.'));
+      return;
+    }
+    res.locals.validatedQuery = result.data;
+    next();
+  };
+}
