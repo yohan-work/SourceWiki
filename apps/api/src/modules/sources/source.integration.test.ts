@@ -66,4 +66,35 @@ describe('source and comment integration', () => {
     sourceIds.splice(0, 1);
     expect(await prisma.comment.count({ where: { id: comment.id } })).toBe(0);
   });
+
+  it('returns related sources by shared tags', async () => {
+    const target = await sources.createSource(ownerId, {
+      title: 'OpenAI Codex 도입 기록',
+      originalUrl: 'https://example.test/openai-codex',
+      sourceType: 'article',
+      tags: ['OpenAI', 'Codex', 'Enterprise'],
+    });
+    const related = await sources.createSource(otherId, {
+      title: '삼성전자 Codex 활용',
+      originalUrl: 'https://example.test/samsung-codex',
+      sourceType: 'article',
+      tags: ['Codex', 'OpenAI'],
+    });
+    const unrelated = await sources.createSource(otherId, {
+      title: '무관한 문서',
+      originalUrl: 'https://example.test/other',
+      sourceType: 'docs',
+      tags: ['Database'],
+    });
+    sourceIds.push(target.id, related.id, unrelated.id);
+
+    const detail = await sources.getSource(target.id, ownerId);
+
+    expect(detail.relatedSources.map((source) => source.id)).toContain(related.id);
+    expect(detail.relatedSources.map((source) => source.id)).not.toContain(target.id);
+    expect(detail.relatedSources.map((source) => source.id)).not.toContain(unrelated.id);
+    expect(detail.relatedSources[0]?.sharedTags.map((tag) => tag.name)).toEqual(
+      expect.arrayContaining(['OpenAI', 'Codex']),
+    );
+  });
 });

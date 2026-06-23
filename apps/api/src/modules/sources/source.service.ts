@@ -54,6 +54,38 @@ function listDto(source: {
   };
 }
 
+async function relatedSources(source: {
+  id: string;
+  sourceTags: { tag: { id: string; name: string } }[];
+}) {
+  const tagIds = source.sourceTags.map(({ tag }) => tag.id);
+  if (!tagIds.length) return [];
+  const candidates = await prisma.source.findMany({
+    where: {
+      id: { not: source.id },
+      sourceTags: { some: { tagId: { in: tagIds } } },
+    },
+    take: 20,
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    include: sourceInclude,
+  });
+  const sourceTagIds = new Set(tagIds);
+  return candidates
+    .map((candidate) => {
+      const sharedTags = candidate.sourceTags
+        .map(({ tag }) => tag)
+        .filter((tag) => sourceTagIds.has(tag.id));
+      return { ...listDto(candidate), sharedTags };
+    })
+    .sort(
+      (left, right) =>
+        right.sharedTags.length - left.sharedTags.length ||
+        right.updatedAt.localeCompare(left.updatedAt) ||
+        right.id.localeCompare(left.id),
+    )
+    .slice(0, 5);
+}
+
 export async function listSources(page: number, limit: number) {
   const [sources, totalItems] = await prisma.$transaction([
     prisma.source.findMany({
@@ -83,6 +115,7 @@ export async function getSource(id: string, viewerId?: string) {
     extractionStatus: source.extractionStatus,
     summaryStatus: source.summaryStatus,
     isOwner: source.userId === viewerId,
+    relatedSources: await relatedSources(source),
   };
 }
 

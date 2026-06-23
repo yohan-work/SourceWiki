@@ -973,6 +973,30 @@ a:focus-visible {
   line-height: 1.75;
   white-space: pre-wrap;
 }
+.related-sources {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(49, 130, 246, 0.18);
+}
+.related-sources > div {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.related-sources a {
+  display: grid;
+  gap: 6px;
+}
+.related-sources strong {
+  color: var(--black);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.related-sources small {
+  color: var(--gray-500);
+  font-size: 11px;
+  line-height: 1.5;
+}
 .comments-section {
   padding: 80px 0 120px;
   border-top: 1px solid var(--gray-300);

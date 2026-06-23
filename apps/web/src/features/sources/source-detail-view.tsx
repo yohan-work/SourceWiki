@@ -101,6 +101,19 @@ export function SourceDetailView({ id }: { id: string }) {
         <aside className="detail-note">
           <span>PERSONAL NOTE</span>
           <p>{source.personalNote ?? '작성자가 남긴 메모가 없습니다.'}</p>
+          {source.relatedSources.length ? (
+            <section className="related-sources" aria-labelledby="related-sources-heading">
+              <span id="related-sources-heading">RELATED</span>
+              <div>
+                {source.relatedSources.map((related) => (
+                  <Link key={related.id} href={`/sources/${related.id}`}>
+                    <strong>{related.title}</strong>
+                    <small>{related.sharedTags.map((tag) => tag.name).join(', ')}</small>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </aside>
       </div>
       <CommentsPanel sourceId={id} />

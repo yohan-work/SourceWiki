@@ -147,6 +147,12 @@ export function SourceForm({ id }: { id?: string }) {
         setValue('title', extracted.title, { shouldDirty: true, shouldValidate: true });
       setValue('sourceType', extracted.sourceType, { shouldDirty: true, shouldValidate: true });
       setValue('rawText', extracted.rawText, { shouldDirty: true, shouldValidate: true });
+      if (!getValues('tagsText').trim() && extracted.suggestedTags.length) {
+        setValue('tagsText', extracted.suggestedTags.join(', '), {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
       setExtractPreview({
         domain: extracted.domain,
         preview: extracted.preview,

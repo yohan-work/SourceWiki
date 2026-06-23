@@ -7,6 +7,7 @@ import ipaddr from 'ipaddr.js';
 import { JSDOM } from 'jsdom';
 
 import { AppError } from '../../errors/app-error.js';
+import { suggestTags } from './tag-suggester.js';
 
 const MAX_REDIRECTS = 3;
 const TIMEOUT_MS = 10_000;
@@ -229,13 +230,20 @@ export async function extractUrl(rawUrl: string) {
       throw new AppError(422, 'EXTRACTION_FAILED', '본문을 충분히 추출하지 못했습니다.');
     const truncated = extracted.text.length > MAX_TEXT_CHARS;
     const rawText = truncated ? extracted.text.slice(0, MAX_TEXT_CHARS) : extracted.text;
+    const sourceType = inferSourceType(downloaded.finalUrl);
     return {
       finalUrl: downloaded.finalUrl.toString(),
       title: extracted.title,
       domain: downloaded.finalUrl.hostname,
-      sourceType: inferSourceType(downloaded.finalUrl),
+      sourceType,
       rawText,
       preview: rawText.slice(0, 300),
+      suggestedTags: suggestTags({
+        title: extracted.title,
+        domain: downloaded.finalUrl.hostname,
+        sourceType,
+        rawText,
+      }),
       truncated,
     };
   } catch (error) {

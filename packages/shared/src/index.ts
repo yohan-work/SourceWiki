@@ -165,6 +165,7 @@ export const extractUrlResponseSchema = z.object({
     sourceType: sourceTypeSchema,
     rawText: z.string(),
     preview: z.string(),
+    suggestedTags: z.array(tagNameSchema).max(10),
     truncated: z.boolean(),
   }),
   meta: apiMetaSchema,
@@ -186,6 +187,9 @@ export const sourceListItemSchema = z.object({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
+export const relatedSourceSchema = sourceListItemSchema.extend({
+  sharedTags: z.array(tagSchema),
+});
 export const sourceDetailSchema = sourceListItemSchema.extend({
   rawText: z.string().nullable(),
   summary: z.string().nullable(),
@@ -195,6 +199,7 @@ export const sourceDetailSchema = sourceListItemSchema.extend({
   extractionStatus: extractionStatusSchema,
   summaryStatus: summaryStatusSchema,
   isOwner: z.boolean(),
+  relatedSources: z.array(relatedSourceSchema),
 });
 export const sourceListResponseSchema = z.object({
   data: z.array(sourceListItemSchema),
@@ -238,6 +243,7 @@ export type SourceType = z.infer<typeof sourceTypeSchema>;
 export type SourceCreateRequest = z.infer<typeof sourceCreateRequestSchema>;
 export type SourceUpdateRequest = z.infer<typeof sourceUpdateRequestSchema>;
 export type SourceListItem = z.infer<typeof sourceListItemSchema>;
+export type RelatedSource = z.infer<typeof relatedSourceSchema>;
 export type SourceDetail = z.infer<typeof sourceDetailSchema>;
 export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;

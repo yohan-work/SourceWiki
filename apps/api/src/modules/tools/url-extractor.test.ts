@@ -101,8 +101,23 @@ describe('url extractor', () => {
       title: 'Public Article',
       truncated: false,
     });
+    expect(result.suggestedTags).toContain('article');
     expect(result.rawText).toContain('SourceWiki extracts public article text');
     expect(result.rawText).not.toContain('<article>');
+  });
+
+  it('suggests known topic tags from extracted title and text', async () => {
+    mockRequest(
+      response({
+        body: `<html><head><title>OpenAI Codex for Samsung</title></head><body><article>${'오픈AI는 삼성전자 임직원에게 챗GPT 엔터프라이즈와 코덱스를 공급한다. '.repeat(8)}</article></body></html>`,
+      }),
+    );
+
+    const result = await extractUrl('https://www.aitimes.com/news/articleView.html?idxno=1');
+
+    expect(result.suggestedTags).toEqual(
+      expect.arrayContaining(['article', 'AI', 'OpenAI', 'ChatGPT', 'Codex', '삼성전자']),
+    );
   });
 
   it('strips URL fragments before fetching and returning the final URL', async () => {
