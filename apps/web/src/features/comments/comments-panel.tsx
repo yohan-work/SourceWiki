@@ -4,16 +4,14 @@ import { commentRequestSchema, type SourceComment } from '@sourcewiki/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { useMeQuery } from '@/features/auth/use-me-query';
 import { ApiError } from '@/lib/api/api-client';
 import { sourceApi, sourceKeys } from '@/features/sources/source-api';
 
 function CommentItem({ comment, sourceId }: { comment: SourceComment; sourceId: string }) {
   const queryClient = useQueryClient();
-  const { data: me } = useMeQuery();
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(comment.content);
-  const owner = me?.id === comment.author.id;
+  const owner = comment.isOwner;
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: sourceKeys.comments(sourceId) }),
@@ -81,9 +79,8 @@ function CommentItem({ comment, sourceId }: { comment: SourceComment; sourceId: 
   );
 }
 
-export function CommentsPanel({ sourceId }: { sourceId: string }) {
+export function CommentsPanel({ sourceId, canComment }: { sourceId: string; canComment: boolean }) {
   const queryClient = useQueryClient();
-  const { data: me } = useMeQuery();
   const { data } = useQuery({
     queryKey: sourceKeys.comments(sourceId),
     queryFn: () => sourceApi.comments(sourceId),
@@ -111,7 +108,7 @@ export function CommentsPanel({ sourceId }: { sourceId: string }) {
         <p className="kicker">DISCUSSION</p>
         <h2 id="comments-title">댓글 {data?.data.length ?? 0}</h2>
       </div>
-      {me ? (
+      {canComment ? (
         <form
           className="comment-form"
           onSubmit={(event) => {

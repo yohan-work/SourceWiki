@@ -1,4 +1,8 @@
-import type { CommentListResponse, SourceDetailResponse } from '@sourcewiki/shared';
+import type {
+  AuthUserResponse,
+  CommentListResponse,
+  SourceDetailResponse,
+} from '@sourcewiki/shared';
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 
@@ -13,6 +17,10 @@ async function loadSource(id: string) {
     return await Promise.all([
       serverApiFetch<SourceDetailResponse>(`/api/sources/${id}`),
       serverApiFetch<CommentListResponse>(`/api/sources/${id}/comments`),
+      serverApiFetch<AuthUserResponse>('/api/auth/me').catch((error) => {
+        if ((error as { status?: number }).status === 401) return null;
+        throw error;
+      }),
     ]);
   } catch (error) {
     if ((error as { status?: number }).status === 404) notFound();
@@ -22,13 +30,14 @@ async function loadSource(id: string) {
 
 export default async function SourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [source, comments] = await loadSource(id);
+  const [source, comments, me] = await loadSource(id);
   const queryClient = new QueryClient();
   queryClient.setQueryData(sourceKeys.detail(id), source);
   queryClient.setQueryData(sourceKeys.comments(id), comments);
+  queryClient.setQueryData(['auth', 'me'], me?.data ?? null);
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <SourceDetailView id={id} />
+      <SourceDetailView id={id} canComment={Boolean(me)} />
     </HydrationBoundary>
   );
 }

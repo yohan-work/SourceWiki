@@ -8,6 +8,7 @@ import type {
   SourceDetailResponse,
   SourceListResponse,
   SourceUpdateRequest,
+  SummarizeSourceResponse,
 } from '@sourcewiki/shared';
 
 import { apiFetch } from '@/lib/api/api-client';
@@ -31,6 +32,12 @@ export const sourceApi = {
       body: JSON.stringify(input),
     }),
   remove: (id: string) => apiFetch<void>(`/api/sources/${id}`, { method: 'DELETE' }),
+  summarize: (id: string) =>
+    apiFetch<SummarizeSourceResponse>(
+      `/api/sources/${id}/summarize`,
+      { method: 'POST' },
+      { timeoutMs: 190_000 },
+    ),
   extractUrl: (input: ExtractUrlRequest) =>
     apiFetch<ExtractUrlResponse>(
       '/api/tools/extract-url',
