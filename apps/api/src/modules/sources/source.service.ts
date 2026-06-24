@@ -2,6 +2,7 @@ import type { SourceCreateRequest, SourceUpdateRequest } from '@sourcewiki/share
 
 import { AppError } from '../../errors/app-error.js';
 import { prisma } from '../../lib/database.js';
+import { summarizeText } from './source-summarizer.js';
 
 const sourceInclude = {
   user: { select: { id: true, nickname: true } },
@@ -186,6 +187,7 @@ export async function updateSource(id: string, userId: string, input: SourceUpda
             }
           : {}),
         ...(input.summary !== undefined ? { summary: input.summary || null } : {}),
+        ...(input.summaryStatus !== undefined ? { summaryStatus: input.summaryStatus } : {}),
         ...(input.keyPoints !== undefined ? { keyPoints: input.keyPoints } : {}),
         ...(input.keywords !== undefined ? { keywords: input.keywords } : {}),
         ...(input.personalNote !== undefined ? { personalNote: input.personalNote || null } : {}),
@@ -200,4 +202,15 @@ export async function deleteSource(id: string, userId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.source.delete({ where: { id, userId } });
   });
+}
+
+export async function summarizeSource(id: string, userId: string) {
+  await assertOwner(id, userId);
+  const source = await prisma.source.findUnique({
+    where: { id },
+    select: { rawText: true },
+  });
+  if (!source?.rawText?.trim())
+    throw new AppError(409, 'SOURCE_TEXT_REQUIRED', '요약할 본문이 필요합니다.');
+  return summarizeText(source.rawText);
 }

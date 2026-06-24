@@ -97,4 +97,35 @@ describe('source and comment integration', () => {
       expect.arrayContaining(['OpenAI', 'Codex']),
     );
   });
+
+  it('requires source text before summarizing', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '본문 없는 자료',
+      originalUrl: 'https://example.test/no-text',
+      sourceType: 'article',
+      tags: [],
+    });
+    sourceIds.push(source.id);
+
+    await expect(sources.summarizeSource(source.id, ownerId)).rejects.toMatchObject({
+      code: 'SOURCE_TEXT_REQUIRED',
+      status: 409,
+    });
+  });
+
+  it('enforces ownership before summarizing', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '요약 권한 자료',
+      originalUrl: 'https://example.test/summary-owner',
+      sourceType: 'article',
+      rawText: '요약 가능한 본문입니다. '.repeat(20),
+      tags: [],
+    });
+    sourceIds.push(source.id);
+
+    await expect(sources.summarizeSource(source.id, otherId)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      status: 403,
+    });
+  });
 });

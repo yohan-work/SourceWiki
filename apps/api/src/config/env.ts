@@ -15,6 +15,10 @@ const envSchema = z.object({
   SMTP_HOST: z.string().min(1).default('localhost'),
   SMTP_PORT: z.coerce.number().int().positive().max(65535).default(1025),
   SMTP_FROM: z.email().default('noreply@sourcewiki.local'),
+  AI_MODE: z.enum(['ollama', 'disabled', 'demo']).default('disabled'),
+  OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
+  OLLAMA_MODEL: z.string().min(1).default('gemma4:e4b'),
+  AI_TIMEOUT_MS: z.coerce.number().int().positive().max(300_000).default(180_000),
   COOKIE_SECURE: z
     .enum(['true', 'false'])
     .default('false')

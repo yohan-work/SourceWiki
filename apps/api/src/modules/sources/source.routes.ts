@@ -44,6 +44,10 @@ export function createSourceRouter() {
     const data = await sources.getSource(String(req.params.id), res.locals.auth?.userId);
     res.json({ data, meta: { requestId: res.locals.requestId } });
   });
+  router.post('/:id/summarize', authenticate, requireVerifiedUser, async (req, res) => {
+    const data = await sources.summarizeSource(String(req.params.id), res.locals.auth.userId);
+    res.json({ data, meta: { requestId: res.locals.requestId } });
+  });
   router.post(
     '/',
     authenticate,

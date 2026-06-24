@@ -135,6 +135,7 @@ export const sourceUpdateRequestSchema = z
     sourceType: sourceTypeSchema.optional(),
     rawText: z.string().trim().max(100_000).nullable().optional(),
     summary: z.string().trim().max(10_000).nullable().optional(),
+    summaryStatus: z.enum(['not_requested', 'succeeded', 'demo']).optional(),
     keyPoints: z.array(keyPointSchema).max(10).optional(),
     keywords: z.array(keywordSchema).max(20).optional(),
     personalNote: z.string().trim().max(10_000).nullable().optional(),
@@ -167,6 +168,18 @@ export const extractUrlResponseSchema = z.object({
     preview: z.string(),
     suggestedTags: z.array(tagNameSchema).max(10),
     truncated: z.boolean(),
+  }),
+  meta: apiMetaSchema,
+});
+
+export const summarizeSourceResponseSchema = z.object({
+  data: z.object({
+    summary: z.string().trim().min(1).max(10_000),
+    keyPoints: z.array(keyPointSchema).max(10),
+    keywords: z.array(keywordSchema).max(20),
+    recommendedTags: z.array(tagNameSchema).max(10),
+    applicationIdea: z.string().trim().max(2000).optional(),
+    mode: z.enum(['ollama', 'demo']),
   }),
   meta: apiMetaSchema,
 });
@@ -249,6 +262,7 @@ export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
 export type ExtractUrlRequest = z.infer<typeof extractUrlRequestSchema>;
 export type ExtractUrlResponse = z.infer<typeof extractUrlResponseSchema>;
+export type SummarizeSourceResponse = z.infer<typeof summarizeSourceResponseSchema>;
 export type Pagination = z.infer<typeof paginationSchema>;
 export type CommentRequest = z.infer<typeof commentRequestSchema>;
 export type SourceComment = z.infer<typeof commentSchema>;

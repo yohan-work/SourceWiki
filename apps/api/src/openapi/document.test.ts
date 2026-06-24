@@ -13,6 +13,7 @@ describe('OpenAPI document', () => {
         '/tools/extract-url',
         '/sources',
         '/sources/{id}',
+        '/sources/{id}/summarize',
         '/sources/{id}/comments',
         '/comments/{id}',
       ]),
