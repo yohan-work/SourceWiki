@@ -6,6 +6,7 @@ import type {
   ExtractUrlResponse,
   SourceCreateRequest,
   SourceDetailResponse,
+  SourceGraphResponse,
   SourceListResponse,
   SourceUpdateRequest,
   SummarizeSourceResponse,
@@ -23,6 +24,7 @@ export const sourceKeys = {
 export const sourceApi = {
   list: (page: number, limit = 12) =>
     apiFetch<SourceListResponse>(`/api/sources?page=${page}&limit=${limit}`),
+  graph: () => apiFetch<SourceGraphResponse>('/api/sources/graph'),
   detail: (id: string) => apiFetch<SourceDetailResponse>(`/api/sources/${id}`),
   create: (input: SourceCreateRequest) =>
     apiFetch<SourceDetailResponse>('/api/sources', { method: 'POST', body: JSON.stringify(input) }),

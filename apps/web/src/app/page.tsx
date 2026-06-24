@@ -1,7 +1,8 @@
 import { SystemStatus } from '@/features/system-status/system-status';
-import type { SourceListResponse } from '@sourcewiki/shared';
+import type { SourceGraphResponse, SourceListResponse } from '@sourcewiki/shared';
 import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api/server-api';
+import { SourceGraphSection } from '@/features/sources/source-graph-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +29,16 @@ async function loadRecentSources() {
   }
 }
 
+async function loadSourceGraph() {
+  try {
+    return await serverApiFetch<SourceGraphResponse>('/api/sources/graph');
+  } catch {
+    return null;
+  }
+}
+
 export default async function Home() {
-  const recentSources = await loadRecentSources();
+  const [recentSources, graph] = await Promise.all([loadRecentSources(), loadSourceGraph()]);
   return (
     <>
       <section className="hero" aria-labelledby="hero-title">
@@ -94,6 +103,8 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      <SourceGraphSection graph={graph?.data ?? null} />
 
       {recentSources ? (
         <section className="recent-sources" aria-labelledby="recent-sources-title">
