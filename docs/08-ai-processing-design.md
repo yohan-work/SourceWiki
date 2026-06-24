@@ -54,7 +54,7 @@ JS 렌더링, 인증 필요, CAPTCHA, robots 차단, paywall 문서는 지원하
 
 ## 상태와 저장
 
-요청 중 상태는 클라이언트 mutation 상태이며 장기 job queue를 도입하지 않는다. API timeout은 60초다. 성공 결과는 review buffer로 반환하고 자동 저장하지 않는다. 사용자가 선택·수정한 summary, keyPoints, keywords, tags만 source PATCH로 저장한다.
+요청 중 상태는 클라이언트 mutation 상태이며 장기 job queue를 도입하지 않는다. API timeout은 60초다. 성공 결과는 review buffer로 반환하고 자동 저장하지 않는다. 사용자가 선택·수정한 summary, keyPoints, keywords, tags와 summaryStatus만 source PATCH로 저장한다.
 
 `summaryStatus`는 사용자가 적용할 때 `succeeded` 또는 `demo`가 된다. 실패 요청은 source의 기존 요약을 덮어쓰지 않으며 UI에서 일시 오류로 보여준다.
 

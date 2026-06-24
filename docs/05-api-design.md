@@ -84,7 +84,7 @@ access 인증과 이메일 인증이 필요하다.
 
 ### `PATCH /sources/:id`
 
-작성자만 가능하며 body는 생성 필드와 `summary`, `keyPoints`, `keywords`의 부분 집합이다. 빈 body는 422다. URL 변경 시 domain을 다시 계산하며 자동 재추출하지 않는다.
+작성자만 가능하며 body는 생성 필드와 `summary`, `summaryStatus`, `keyPoints`, `keywords`의 부분 집합이다. 빈 body는 422다. URL 변경 시 domain을 다시 계산하며 자동 재추출하지 않는다. `summaryStatus`는 요약 적용 시 `succeeded` 또는 `demo`로 갱신하며, 실패한 AI 요청은 기존 요약 상태를 덮어쓰지 않는다.
 
 ### `DELETE /sources/:id`
 
