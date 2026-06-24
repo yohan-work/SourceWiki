@@ -290,8 +290,6 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
           ) : null}
           {rawParagraphs.length ? (
             <section className="article-body" aria-labelledby="article-body-heading">
-              <p className="kicker">EXTRACTED ARTICLE</p>
-              <h2 id="article-body-heading">본문</h2>
               <div>
                 {rawParagraphs.map((paragraph, index) => (
                   <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
