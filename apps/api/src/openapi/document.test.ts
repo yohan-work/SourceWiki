@@ -12,6 +12,7 @@ describe('OpenAPI document', () => {
       expect.arrayContaining([
         '/tools/extract-url',
         '/sources',
+        '/sources/graph',
         '/sources/{id}',
         '/sources/{id}/summarize',
         '/sources/{id}/comments',

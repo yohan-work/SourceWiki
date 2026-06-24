@@ -20,6 +20,10 @@ export function createSourceRouter() {
     const result = await sources.listSources(page, limit);
     res.json({ ...result, meta: { requestId: res.locals.requestId } });
   });
+  router.get('/graph', async (_req, res) => {
+    const data = await sources.getSourceGraph();
+    res.json({ data, meta: { requestId: res.locals.requestId } });
+  });
   router.get('/:id/comments', optionalAuthenticate, async (req, res) => {
     res.json({
       data: await comments.listComments(String(req.params.id), res.locals.auth?.userId),

@@ -8,6 +8,7 @@ import {
   summarizeSourceResponseSchema,
   sourceCreateRequestSchema,
   sourceDetailResponseSchema,
+  sourceGraphResponseSchema,
   sourceListResponseSchema,
   sourceUpdateRequestSchema,
 } from '@sourcewiki/shared';
@@ -46,6 +47,7 @@ export const openApiDocument = {
       SourceUpdate: schema(sourceUpdateRequestSchema),
       SourceListResponse: schema(sourceListResponseSchema),
       SourceDetailResponse: schema(sourceDetailResponseSchema),
+      SourceGraphResponse: schema(sourceGraphResponseSchema),
       CommentRequest: schema(commentRequestSchema),
       CommentResponse: schema(commentResponseSchema),
       CommentListResponse: schema(commentListResponseSchema),
@@ -102,6 +104,13 @@ export const openApiDocument = {
         security: [{ accessCookie: [] }],
         requestBody: { required: true, ...json('SourceCreate') },
         responses: { 201: response('생성된 자료', 'SourceDetailResponse'), ...errorResponses },
+      },
+    },
+    '/sources/graph': {
+      get: {
+        tags: ['Sources'],
+        summary: '태그 기반 자료 연결 그래프 조회',
+        responses: { 200: response('자료 연결 그래프', 'SourceGraphResponse') },
       },
     },
     '/sources/{id}': {

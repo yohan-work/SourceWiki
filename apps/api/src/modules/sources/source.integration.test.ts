@@ -98,6 +98,33 @@ describe('source and comment integration', () => {
     );
   });
 
+  it('returns a tag-based source graph', async () => {
+    const graphLeft = await sources.createSource(ownerId, {
+      title: '그래프 왼쪽 자료',
+      originalUrl: 'https://example.test/graph-left',
+      sourceType: 'docs',
+      tags: ['Graph', 'Knowledge'],
+    });
+    const graphRight = await sources.createSource(otherId, {
+      title: '그래프 오른쪽 자료',
+      originalUrl: 'https://example.test/graph-right',
+      sourceType: 'article',
+      tags: ['Graph', 'AI'],
+    });
+    sourceIds.push(graphLeft.id, graphRight.id);
+
+    const graph = await sources.getSourceGraph();
+    const edge = graph.edges.find(
+      (candidate) =>
+        [candidate.sourceId, candidate.targetId].includes(graphLeft.id) &&
+        [candidate.sourceId, candidate.targetId].includes(graphRight.id),
+    );
+
+    expect(graph.nodes.map((node) => node.id)).toEqual(expect.arrayContaining([graphLeft.id]));
+    expect(edge?.sharedTags).toContain('Graph');
+    expect(graph.tags.map((tag) => tag.name)).toContain('Graph');
+  });
+
   it('requires source text before summarizing', async () => {
     const source = await sources.createSource(ownerId, {
       title: '본문 없는 자료',

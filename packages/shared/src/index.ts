@@ -203,6 +203,28 @@ export const sourceListItemSchema = z.object({
 export const relatedSourceSchema = sourceListItemSchema.extend({
   sharedTags: z.array(tagSchema),
 });
+export const sourceGraphNodeSchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  sourceDomain: z.string(),
+  sourceType: sourceTypeSchema,
+  tags: z.array(z.string()),
+  weight: z.number().int().min(1),
+});
+export const sourceGraphEdgeSchema = z.object({
+  sourceId: z.uuid(),
+  targetId: z.uuid(),
+  sharedTags: z.array(z.string()),
+  weight: z.number().int().min(1),
+});
+export const sourceGraphResponseSchema = z.object({
+  data: z.object({
+    nodes: z.array(sourceGraphNodeSchema),
+    edges: z.array(sourceGraphEdgeSchema),
+    tags: z.array(z.object({ name: z.string(), count: z.number().int().min(1) })),
+  }),
+  meta: apiMetaSchema,
+});
 export const sourceDetailSchema = sourceListItemSchema.extend({
   rawText: z.string().nullable(),
   summary: z.string().nullable(),
@@ -257,6 +279,9 @@ export type SourceCreateRequest = z.infer<typeof sourceCreateRequestSchema>;
 export type SourceUpdateRequest = z.infer<typeof sourceUpdateRequestSchema>;
 export type SourceListItem = z.infer<typeof sourceListItemSchema>;
 export type RelatedSource = z.infer<typeof relatedSourceSchema>;
+export type SourceGraphNode = z.infer<typeof sourceGraphNodeSchema>;
+export type SourceGraphEdge = z.infer<typeof sourceGraphEdgeSchema>;
+export type SourceGraphResponse = z.infer<typeof sourceGraphResponseSchema>;
 export type SourceDetail = z.infer<typeof sourceDetailSchema>;
 export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;

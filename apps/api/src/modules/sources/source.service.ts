@@ -9,6 +9,8 @@ const sourceInclude = {
   sourceTags: { include: { tag: { select: { id: true, name: true } } } },
   _count: { select: { comments: true } },
 } as const;
+const GRAPH_NODE_LIMIT = 80;
+const GRAPH_EDGES_PER_NODE_LIMIT = 6;
 
 function normalizeTags(tags: string[]) {
   const unique = new Map<string, string>();
@@ -100,6 +102,91 @@ export async function listSources(page: number, limit: number) {
   return {
     data: sources.map(listDto),
     pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) },
+  };
+}
+
+export async function getSourceGraph() {
+  const sources = await prisma.source.findMany({
+    take: GRAPH_NODE_LIMIT,
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    select: {
+      id: true,
+      title: true,
+      sourceDomain: true,
+      sourceType: true,
+      sourceTags: { include: { tag: { select: { name: true } } } },
+    },
+  });
+  const edgeMap = new Map<
+    string,
+    { sourceId: string; targetId: string; sharedTags: Set<string> }
+  >();
+  const tagCounts = new Map<string, number>();
+
+  for (const source of sources) {
+    for (const { tag } of source.sourceTags) {
+      tagCounts.set(tag.name, (tagCounts.get(tag.name) ?? 0) + 1);
+    }
+  }
+
+  for (let leftIndex = 0; leftIndex < sources.length; leftIndex += 1) {
+    const left = sources[leftIndex]!;
+    const leftTags = new Set(left.sourceTags.map(({ tag }) => tag.name));
+    if (!leftTags.size) continue;
+    for (let rightIndex = leftIndex + 1; rightIndex < sources.length; rightIndex += 1) {
+      const right = sources[rightIndex]!;
+      const sharedTags = right.sourceTags
+        .map(({ tag }) => tag.name)
+        .filter((name) => leftTags.has(name));
+      if (!sharedTags.length) continue;
+      const sourceId = left.id < right.id ? left.id : right.id;
+      const targetId = left.id < right.id ? right.id : left.id;
+      edgeMap.set(`${sourceId}:${targetId}`, {
+        sourceId,
+        targetId,
+        sharedTags: new Set(sharedTags),
+      });
+    }
+  }
+
+  const degree = new Map<string, number>();
+  const edges = [...edgeMap.values()]
+    .map((edge) => ({
+      sourceId: edge.sourceId,
+      targetId: edge.targetId,
+      sharedTags: [...edge.sharedTags],
+      weight: edge.sharedTags.size,
+    }))
+    .sort(
+      (left, right) => right.weight - left.weight || left.sourceId.localeCompare(right.sourceId),
+    )
+    .filter((edge) => {
+      const sourceDegree = degree.get(edge.sourceId) ?? 0;
+      const targetDegree = degree.get(edge.targetId) ?? 0;
+      if (sourceDegree >= GRAPH_EDGES_PER_NODE_LIMIT || targetDegree >= GRAPH_EDGES_PER_NODE_LIMIT)
+        return false;
+      degree.set(edge.sourceId, sourceDegree + 1);
+      degree.set(edge.targetId, targetDegree + 1);
+      return true;
+    });
+
+  return {
+    nodes: sources.map((source) => {
+      const tags = source.sourceTags.map(({ tag }) => tag.name);
+      return {
+        id: source.id,
+        title: source.title,
+        sourceDomain: source.sourceDomain,
+        sourceType: source.sourceType,
+        tags,
+        weight: Math.max(1, degree.get(source.id) ?? tags.length),
+      };
+    }),
+    edges,
+    tags: [...tagCounts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name))
+      .slice(0, 12),
   };
 }
 
