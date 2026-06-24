@@ -39,6 +39,36 @@ function mergeTags(current: string[], recommended: string[]) {
   return [...unique.values()].slice(0, 10);
 }
 
+function articleParagraphs(value: string) {
+  const normalized = value.replace(/\r\n?/g, '\n').trim();
+  const blocks = normalized
+    .split(/\n{2,}/)
+    .map((block) => block.replace(/\s*\n\s*/g, ' ').trim())
+    .filter(Boolean);
+  if (blocks.length > 1) return blocks;
+  return normalized
+    .split(/(?<=[.!?。！？]|다\.|요\.)\s+/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+}
+
+function DetailVisual({
+  source,
+}: {
+  source: { sourceDomain: string; sourceType: 'article' | 'docs' | 'paper' | 'github' | 'other' };
+}) {
+  const label = source.sourceType === 'github' ? 'GH' : source.sourceType.slice(0, 2).toUpperCase();
+  return (
+    <div className={`detail-visual source-visual--${source.sourceType}`} aria-hidden="true">
+      <div className="detail-visual__orb" />
+      <div className="detail-visual__stack">
+        <span>{label}</span>
+      </div>
+      <small>{source.sourceDomain}</small>
+    </div>
+  );
+}
+
 export function SourceDetailView({ id, canComment }: { id: string; canComment: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -98,9 +128,11 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
   });
   if (!source) return null;
   const owner = source.isOwner;
+  const rawParagraphs = source.rawText ? articleParagraphs(source.rawText) : [];
   return (
     <article className="source-detail page-shell">
       <header className="detail-hero">
+        <DetailVisual source={source} />
         <div className="detail-hero__meta">
           <span>{source.sourceDomain}</span>
           <span>{source.sourceType}</span>
@@ -112,11 +144,13 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
             new Date(source.createdAt),
           )}
         </p>
-        <div className="tag-row">
-          {source.tags.map((tag) => (
-            <span key={tag.id}>{tag.name}</span>
-          ))}
-        </div>
+        {source.tags.length ? (
+          <div className="tag-row">
+            {source.tags.map((tag) => (
+              <span key={tag.id}>{tag.name}</span>
+            ))}
+          </div>
+        ) : null}
         <div className="detail-actions">
           <a
             className="button button--primary"
@@ -254,11 +288,16 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
               </ol>
             </section>
           ) : null}
-          {source.rawText ? (
-            <details className="raw-text">
-              <summary>정제 본문 펼쳐보기</summary>
-              <p>{source.rawText}</p>
-            </details>
+          {rawParagraphs.length ? (
+            <section className="article-body" aria-labelledby="article-body-heading">
+              <p className="kicker">EXTRACTED ARTICLE</p>
+              <h2 id="article-body-heading">본문</h2>
+              <div>
+                {rawParagraphs.map((paragraph, index) => (
+                  <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
           ) : null}
         </main>
         <aside className="detail-note">

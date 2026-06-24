@@ -132,9 +132,6 @@ importers:
       '@fontsource-variable/manrope':
         specifier: ^5.2.0
         version: 5.2.8
-      '@fontsource-variable/newsreader':
-        specifier: ^5.2.0
-        version: 5.2.10
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.4.0(react-hook-form@7.80.0(react@19.2.7))
@@ -562,9 +559,6 @@ packages:
 
   '@fontsource-variable/manrope@5.2.8':
     resolution: {integrity: sha512-nc9lOuCRz73UHnovDE2bwXUdghE2SEOc7Aii0qGe3CLyE03W1a7VnY5Z6euRiapiKbCkGS+eXbY3s/kvWeGeSw==}
-
-  '@fontsource-variable/newsreader@5.2.10':
-    resolution: {integrity: sha512-MdI2iRwrqWpMOU/2aV2BgfZ4dJNlj/XlYaY8Zb7t87mWqHskYW0XiUANkt1cyOCiEfW2VQ0bQ5vZgGPp6B2B4w==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -3967,8 +3961,6 @@ snapshots:
       '@noble/hashes': 1.8.0
 
   '@fontsource-variable/manrope@5.2.8': {}
-
-  '@fontsource-variable/newsreader@5.2.10': {}
 
   '@hono/node-server@1.19.11(hono@4.12.26)':
     dependencies:

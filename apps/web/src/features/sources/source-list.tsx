@@ -6,31 +6,48 @@ import Link from 'next/link';
 
 import { sourceApi, sourceKeys } from './source-api';
 
+function SourceVisual({ source }: { source: Pick<SourceListItem, 'sourceDomain' | 'sourceType'> }) {
+  const label = source.sourceType === 'github' ? 'GH' : source.sourceType.slice(0, 2).toUpperCase();
+  return (
+    <div className={`source-visual source-visual--${source.sourceType}`} aria-hidden="true">
+      <div className="source-visual__orb" />
+      <div className="source-visual__stack">
+        <span>{label}</span>
+      </div>
+      <small>{source.sourceDomain}</small>
+    </div>
+  );
+}
+
 function SourceCard({ source }: { source: SourceListItem }) {
   const excerpt = source.summaryPreview ?? source.rawTextPreview ?? '아직 작성된 요약이 없습니다.';
   return (
     <article className="source-card">
-      <div className="source-card__meta">
-        <span>{source.sourceDomain}</span>
-        <span>{source.commentCount} comments</span>
+      <div className="source-card__body">
+        <div className="source-card__meta">
+          <span>{source.sourceType}</span>
+          <span>{source.author.nickname}</span>
+        </div>
+        <h2>
+          <Link href={`/sources/${source.id}`}>{source.title}</Link>
+        </h2>
+        <p>{excerpt}</p>
+        <footer>
+          <div className="tag-row">
+            {source.tags.slice(0, 3).map((tag) => (
+              <span key={tag.id}>{tag.name}</span>
+            ))}
+          </div>
+          <time dateTime={source.createdAt}>
+            {new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' }).format(
+              new Date(source.createdAt),
+            )}
+          </time>
+        </footer>
       </div>
-      <h2>
-        <Link href={`/sources/${source.id}`}>{source.title}</Link>
-      </h2>
-      <p>{excerpt}</p>
-      <div className="tag-row">
-        {source.tags.map((tag) => (
-          <span key={tag.id}>{tag.name}</span>
-        ))}
-      </div>
-      <footer>
-        <span>{source.author.nickname}</span>
-        <time dateTime={source.createdAt}>
-          {new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' }).format(
-            new Date(source.createdAt),
-          )}
-        </time>
-      </footer>
+      <Link className="source-card__visual-link" href={`/sources/${source.id}`} tabIndex={-1}>
+        <SourceVisual source={source} />
+      </Link>
     </article>
   );
 }
