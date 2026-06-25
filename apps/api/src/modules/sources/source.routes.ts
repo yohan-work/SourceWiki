@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   commentRequestSchema,
   paginationQuerySchema,
+  sourceChatRequestSchema,
   sourceCreateRequestSchema,
   sourceUpdateRequestSchema,
 } from '@sourcewiki/shared';
@@ -52,6 +53,20 @@ export function createSourceRouter() {
     const data = await sources.summarizeSource(String(req.params.id), res.locals.auth.userId);
     res.json({ data, meta: { requestId: res.locals.requestId } });
   });
+  router.post(
+    '/:id/chat',
+    authenticate,
+    requireVerifiedUser,
+    validateBody(sourceChatRequestSchema),
+    async (req, res) => {
+      const data = await sources.chatWithSource(
+        String(req.params.id),
+        res.locals.auth.userId,
+        req.body,
+      );
+      res.json({ data, meta: { requestId: res.locals.requestId } });
+    },
+  );
   router.post(
     '/',
     authenticate,

@@ -1,8 +1,12 @@
-import type { SourceCreateRequest, SourceUpdateRequest } from '@sourcewiki/shared';
+import type {
+  SourceChatRequest,
+  SourceCreateRequest,
+  SourceUpdateRequest,
+} from '@sourcewiki/shared';
 
 import { AppError } from '../../errors/app-error.js';
 import { prisma } from '../../lib/database.js';
-import { summarizeText } from './source-summarizer.js';
+import { chatWithText, summarizeText } from './source-summarizer.js';
 
 const sourceInclude = {
   user: { select: { id: true, nickname: true } },
@@ -300,4 +304,15 @@ export async function summarizeSource(id: string, userId: string) {
   if (!source?.rawText?.trim())
     throw new AppError(409, 'SOURCE_TEXT_REQUIRED', '요약할 본문이 필요합니다.');
   return summarizeText(source.rawText);
+}
+
+export async function chatWithSource(id: string, userId: string, input: SourceChatRequest) {
+  await assertOwner(id, userId);
+  const source = await prisma.source.findUnique({
+    where: { id },
+    select: { rawText: true },
+  });
+  if (!source?.rawText?.trim())
+    throw new AppError(409, 'SOURCE_TEXT_REQUIRED', '질문할 본문이 필요합니다.');
+  return chatWithText(source.rawText, input.message, input.history);
 }

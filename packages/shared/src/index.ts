@@ -184,6 +184,22 @@ export const summarizeSourceResponseSchema = z.object({
   meta: apiMetaSchema,
 });
 
+export const sourceChatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().trim().min(1).max(4000),
+});
+export const sourceChatRequestSchema = z.object({
+  message: z.string().trim().min(1, '질문을 입력해 주세요.').max(2000),
+  history: z.array(sourceChatMessageSchema).max(8).default([]),
+});
+export const sourceChatResponseSchema = z.object({
+  data: z.object({
+    answer: z.string().trim().min(1).max(10_000),
+    mode: z.enum(['ollama', 'demo']),
+  }),
+  meta: apiMetaSchema,
+});
+
 export const authorSchema = z.object({ id: z.uuid(), nickname: z.string() });
 export const tagSchema = z.object({ id: z.uuid(), name: z.string() });
 export const sourceListItemSchema = z.object({
@@ -288,6 +304,9 @@ export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
 export type ExtractUrlRequest = z.infer<typeof extractUrlRequestSchema>;
 export type ExtractUrlResponse = z.infer<typeof extractUrlResponseSchema>;
 export type SummarizeSourceResponse = z.infer<typeof summarizeSourceResponseSchema>;
+export type SourceChatMessage = z.infer<typeof sourceChatMessageSchema>;
+export type SourceChatRequest = z.infer<typeof sourceChatRequestSchema>;
+export type SourceChatResponse = z.infer<typeof sourceChatResponseSchema>;
 export type Pagination = z.infer<typeof paginationSchema>;
 export type CommentRequest = z.infer<typeof commentRequestSchema>;
 export type SourceComment = z.infer<typeof commentSchema>;

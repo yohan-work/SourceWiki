@@ -15,6 +15,7 @@ describe('OpenAPI document', () => {
         '/sources/graph',
         '/sources/{id}',
         '/sources/{id}/summarize',
+        '/sources/{id}/chat',
         '/sources/{id}/comments',
         '/comments/{id}',
       ]),

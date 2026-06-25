@@ -5,6 +5,8 @@ import type {
   ExtractUrlRequest,
   ExtractUrlResponse,
   SourceCreateRequest,
+  SourceChatRequest,
+  SourceChatResponse,
   SourceDetailResponse,
   SourceGraphResponse,
   SourceListResponse,
@@ -40,6 +42,12 @@ export const sourceApi = {
     apiFetch<SummarizeSourceResponse>(
       `/api/sources/${id}/summarize`,
       { method: 'POST' },
+      { timeoutMs: SUMMARY_TIMEOUT_MS },
+    ),
+  chat: (id: string, input: SourceChatRequest) =>
+    apiFetch<SourceChatResponse>(
+      `/api/sources/${id}/chat`,
+      { method: 'POST', body: JSON.stringify(input) },
       { timeoutMs: SUMMARY_TIMEOUT_MS },
     ),
   extractUrl: (input: ExtractUrlRequest) =>

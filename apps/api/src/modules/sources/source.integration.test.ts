@@ -140,6 +140,23 @@ describe('source and comment integration', () => {
     });
   });
 
+  it('requires source text before chatting', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '대화 본문 없는 자료',
+      originalUrl: 'https://example.test/no-chat-text',
+      sourceType: 'article',
+      tags: [],
+    });
+    sourceIds.push(source.id);
+
+    await expect(
+      sources.chatWithSource(source.id, ownerId, { message: '질문', history: [] }),
+    ).rejects.toMatchObject({
+      code: 'SOURCE_TEXT_REQUIRED',
+      status: 409,
+    });
+  });
+
   it('enforces ownership before summarizing', async () => {
     const source = await sources.createSource(ownerId, {
       title: '요약 권한 자료',
@@ -151,6 +168,24 @@ describe('source and comment integration', () => {
     sourceIds.push(source.id);
 
     await expect(sources.summarizeSource(source.id, otherId)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      status: 403,
+    });
+  });
+
+  it('enforces ownership before chatting', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '대화 권한 자료',
+      originalUrl: 'https://example.test/chat-owner',
+      sourceType: 'article',
+      rawText: '대화 가능한 본문입니다. '.repeat(20),
+      tags: [],
+    });
+    sourceIds.push(source.id);
+
+    await expect(
+      sources.chatWithSource(source.id, otherId, { message: '질문', history: [] }),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
       status: 403,
     });

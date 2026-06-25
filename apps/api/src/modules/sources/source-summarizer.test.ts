@@ -18,11 +18,30 @@ describe('source summarizer', () => {
     await expect(summarizeText('원문')).resolves.toMatchObject({ mode: 'demo' });
   });
 
+  it('returns a chat fixture in demo mode', async () => {
+    vi.stubEnv('AI_MODE', 'demo');
+    const { chatWithText } = await loadSummarizer();
+
+    await expect(chatWithText('원문', '무엇을 말하나요?')).resolves.toMatchObject({
+      mode: 'demo',
+    });
+  });
+
   it('rejects requests when AI is disabled', async () => {
     vi.stubEnv('AI_MODE', 'disabled');
     const { summarizeText } = await loadSummarizer();
 
     await expect(summarizeText('원문')).rejects.toMatchObject({ code: 'AI_DISABLED', status: 503 });
+  });
+
+  it('rejects chat requests when AI is disabled', async () => {
+    vi.stubEnv('AI_MODE', 'disabled');
+    const { chatWithText } = await loadSummarizer();
+
+    await expect(chatWithText('원문', '질문')).rejects.toMatchObject({
+      code: 'AI_DISABLED',
+      status: 503,
+    });
   });
 
   it('parses fenced Ollama JSON responses', async () => {
@@ -43,6 +62,20 @@ describe('source summarizer', () => {
       mode: 'ollama',
       summary: '요약입니다.',
       keyPoints: ['하나'],
+    });
+  });
+
+  it('parses Ollama chat JSON responses', async () => {
+    vi.stubEnv('AI_MODE', 'ollama');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ response: '{"answer":"원문 기반 답변입니다."}' })),
+    );
+    const { chatWithText } = await loadSummarizer();
+
+    await expect(chatWithText('원문', '질문')).resolves.toMatchObject({
+      mode: 'ollama',
+      answer: '원문 기반 답변입니다.',
     });
   });
 
@@ -85,7 +118,10 @@ describe('source summarizer', () => {
 
   it('returns AI_INVALID_RESPONSE for non-JSON Ollama responses', async () => {
     vi.stubEnv('AI_MODE', 'ollama');
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('not json')));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('not json')),
+    );
     const { summarizeText } = await loadSummarizer();
 
     await expect(summarizeText('원문')).rejects.toMatchObject({
