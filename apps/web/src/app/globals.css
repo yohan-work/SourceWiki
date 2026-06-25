@@ -638,7 +638,7 @@ a:focus-visible {
 
 .knowledge-graph-copy h2 {
   margin: 0;
-  font-size: clamp(36px, 4.6vw, 58px);
+  font-size: clamp(26px, 3.6vw, 40px);
   line-height: 1.16;
 }
 
@@ -947,7 +947,7 @@ a:focus-visible {
 }
 .source-card h2 {
   max-width: 760px;
-  margin: 26px 0 20px;
+  margin: 16px 0 10px;
   color: #202632;
   font-size: 36px;
   font-weight: 760;
@@ -1557,19 +1557,15 @@ a:focus-visible {
 .extract-panel {
   display: grid;
   gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--gray-300);
-  border-radius: 16px;
-  background: var(--gray-50);
+}
+.extract-panel button {
+  border: 0;
 }
 .extract-panel > p {
   margin: 0;
   color: var(--gray-700);
   font-size: 13px;
   line-height: 1.6;
-}
-.extract-panel .button {
-  width: fit-content;
 }
 .extract-preview {
   display: grid;

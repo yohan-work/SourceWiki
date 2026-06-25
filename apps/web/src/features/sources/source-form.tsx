@@ -227,17 +227,13 @@ export function SourceForm({ id }: { id?: string }) {
       {!id ? (
         <div className="extract-panel">
           <button
-            className="button button--secondary"
+            className="button button--primary"
             type="button"
             onClick={handleExtract}
             disabled={extractMutation.isPending}
           >
             {extractMutation.isPending ? '본문 가져오는 중…' : '본문 가져오기'}
           </button>
-          <p>
-            공개 HTML과 일반 텍스트 문서에서 제목과 본문을 미리 채웁니다. 실패해도 수동으로 저장할
-            수 있습니다.
-          </p>
           {extractPreview ? (
             <div className="extract-preview" aria-live="polite">
               <strong>{extractPreview.domain}</strong>
