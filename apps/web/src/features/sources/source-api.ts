@@ -14,6 +14,8 @@ import type {
 
 import { apiFetch } from '@/lib/api/api-client';
 
+const SUMMARY_TIMEOUT_MS = 390_000;
+
 export const sourceKeys = {
   lists: ['sources'] as const,
   list: (page: number, limit = 12) => ['sources', { page, limit }] as const,
@@ -38,7 +40,7 @@ export const sourceApi = {
     apiFetch<SummarizeSourceResponse>(
       `/api/sources/${id}/summarize`,
       { method: 'POST' },
-      { timeoutMs: 190_000 },
+      { timeoutMs: SUMMARY_TIMEOUT_MS },
     ),
   extractUrl: (input: ExtractUrlRequest) =>
     apiFetch<ExtractUrlResponse>(

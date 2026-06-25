@@ -82,4 +82,15 @@ describe('source summarizer', () => {
       status: 502,
     });
   });
+
+  it('returns AI_INVALID_RESPONSE for non-JSON Ollama responses', async () => {
+    vi.stubEnv('AI_MODE', 'ollama');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('not json')));
+    const { summarizeText } = await loadSummarizer();
+
+    await expect(summarizeText('원문')).rejects.toMatchObject({
+      code: 'AI_INVALID_RESPONSE',
+      status: 502,
+    });
+  });
 });

@@ -88,7 +88,12 @@ async function requestOllama(prompt: string) {
   }
   if (!response.ok)
     throw new AppError(503, 'AI_UNAVAILABLE', 'AI 요약 서비스를 사용할 수 없습니다.');
-  const body = (await response.json()) as { response?: unknown };
+  let body: { response?: unknown };
+  try {
+    body = (await response.json()) as { response?: unknown };
+  } catch {
+    throw new AppError(502, 'AI_INVALID_RESPONSE', 'AI 응답 형식을 확인하지 못했습니다.');
+  }
   if (typeof body.response !== 'string')
     throw new AppError(502, 'AI_INVALID_RESPONSE', 'AI 응답 형식을 확인하지 못했습니다.');
   return body.response;

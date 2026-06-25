@@ -6,6 +6,10 @@ import { disconnectDatabase } from './lib/database.js';
 import { logger } from './lib/logger.js';
 
 const server = createServer(createApp());
+const aiRequestTimeoutMs = env.AI_TIMEOUT_MS * 2 + 30_000;
+
+server.timeout = Math.max(server.timeout, aiRequestTimeoutMs);
+server.requestTimeout = Math.max(server.requestTimeout, aiRequestTimeoutMs);
 
 server.listen(env.API_PORT, '0.0.0.0', () => {
   logger.info({ port: env.API_PORT }, 'SourceWiki API listening');
