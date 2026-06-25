@@ -47,7 +47,7 @@ export function SourceGraphSection({ graph }: { graph: GraphData | null }) {
       ]),
     );
     return {
-      nodes: [...positions.values()],
+      nodes: Array.from(positions.values()),
       edges: (graph?.edges ?? [])
         .map((edge) => {
           const source = positions.get(edge.sourceId);
