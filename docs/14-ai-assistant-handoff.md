@@ -17,6 +17,7 @@ The summary and chat surfaces intentionally do not write AI content into the art
   - `Shift+Enter` inserts a newline.
   - IME composition is respected so Korean input does not submit early.
 - While the model is answering, the chat tab shows a compact animated AI mark with three loading dots.
+- The same animated AI mark is also used while the summary draft is being generated.
 
 ## Backend/API
 
@@ -47,6 +48,15 @@ The summary and chat surfaces intentionally do not write AI content into the art
 - UI state:
   - Chat history is React state only. It is not persisted to DB or localStorage.
   - The request sends the last 8 messages as context.
+- UI components:
+  - `AiThinkingIndicator` renders the shared loading motion for both summary generation and chat answering.
+  - The source detail launcher currently displays `AI Assistant`.
+
+## App Icon
+
+- The app favicon was changed from `apps/web/src/app/icon.svg` to `apps/web/src/app/icon.png`.
+- The PNG is a 1254 x 1254 generated app icon with a document/book/link/network motif.
+- Next app router exposes it as `/icon.png` through the file convention.
 
 ## Validation
 
@@ -63,6 +73,14 @@ pnpm --filter @sourcewiki/web build
 ```
 
 Note: full API tests needed elevated execution in this environment because sandboxed supertest could not listen on `0.0.0.0`.
+
+Additional post-handoff validation:
+
+```sh
+pnpm --filter @sourcewiki/web typecheck
+pnpm --filter @sourcewiki/web lint
+pnpm --filter @sourcewiki/web build
+```
 
 ## Follow-Up Notes
 
