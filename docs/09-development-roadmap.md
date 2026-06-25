@@ -54,14 +54,17 @@
 
 ## Phase 6 — 배포·제출
 
-- AWS EC2에 Docker, Compose plugin, reverse proxy와 HTTPS 인증서를 구성한다.
-- DB volume과 백업 경로는 외부 비공개로 유지하고 보안 그룹은 22(제한), 80, 443만 연다.
-- GitHub Actions에서 test/build 후 image build·registry push·EC2 deploy를 수행한다.
+- 새 AWS EC2에 Docker, Compose plugin, Caddy reverse proxy와 HTTPS 인증서를 구성한다.
+- DB volume과 백업 경로는 외부 비공개로 유지하고 보안 그룹은 22(관리자 IP 제한), 80, 443만 연다.
+- GHCR에 Web/API image를 git sha tag로 push하고 EC2는 immutable tag를 pull한다.
+- 운영 Compose에서는 Mailpit을 제외하고 실제 SMTP를 사용한다.
+- 운영 AI 기본값은 `AI_MODE=demo`로 두며 demo 표시를 강제한다. 실제 Ollama는 로컬 smoke로 분리한다.
+- GitHub Actions에서 test/build 후 image build, GHCR push, EC2 deploy를 수행한다.
 - 배포는 `pull → migrate deploy → compose up -d → readiness smoke` 순서로 진행한다.
 - 실패 시 이전 image tag로 되돌리는 runbook과 DB migration 호환 원칙을 기록한다.
-- README에 로컬 실행, 구조, 환경변수, 서비스·Swagger URL, 시연 계정을 정리한다.
+- README에 로컬 실행, 배포 URL, Swagger URL, 환경변수, 시연 계정, 배포 workflow를 정리한다.
 
-완료 기준: 기본 브랜치 merge 후 자동 배포되고 서비스, API readiness, Swagger, 가입 메일 흐름이 HTTPS 환경에서 통과한다.
+완료 기준: 기본 브랜치 merge 후 자동 배포되고 HTTPS 환경에서 Web, API readiness, Swagger, 실제 SMTP 가입 메일, 자료·댓글 CRUD, AI demo 요약 smoke가 통과한다.
 
 ## CI/CD 품질 게이트
 

@@ -1,6 +1,6 @@
 # SourceLink Wiki
 
-AI 기술 자료의 출처와 맥락을 함께 쌓는 공개 지식 아카이브입니다. 현재 이메일 인증, 회전형 JWT 세션, 자료·댓글 CRUD, 서버 페이징, Swagger/OpenAPI를 제공합니다.
+AI 기술 자료의 출처와 맥락을 함께 쌓는 공개 지식 아카이브입니다. 현재 이메일 인증, 회전형 JWT 세션, 자료·댓글 CRUD, 서버 페이징, URL 본문 추출, 로컬 AI 요약 초안, Swagger/OpenAPI를 제공합니다.
 
 ## 요구 환경
 
@@ -45,6 +45,23 @@ pnpm docker:up
 
 서비스는 Caddy 단일 진입점 http://localhost:8080 에서 제공됩니다. 인증 메일은 http://localhost:8025 에서 확인할 수 있습니다. 종료 시 `pnpm docker:down`을 사용하며 데이터베이스 volume은 유지됩니다.
 
+## AI 요약 모드
+
+기본값은 `AI_MODE=disabled`이며 자료 CRUD와 댓글 기능에는 영향을 주지 않습니다.
+
+```env
+AI_MODE=disabled
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma4:e4b
+AI_TIMEOUT_MS=180000
+```
+
+- `disabled`: 요약 API가 503을 반환하고 사용자는 수동 요약을 유지합니다.
+- `demo`: 고정 fixture를 반환하며 UI에 demo badge를 표시합니다.
+- `ollama`: 로컬 Ollama `/api/generate`를 호출합니다.
+
+로컬 Ollama smoke는 `AI_MODE=ollama OLLAMA_BASE_URL=http://127.0.0.1:11434` 조합을 권장합니다. 제출/운영 Phase 6 기본값은 안정성을 위해 `AI_MODE=demo`입니다.
+
 ## 인증 흐름
 
 - 가입: `/signup`에서 계정을 만든 뒤 Mailpit의 인증 링크를 사용합니다.
@@ -82,6 +99,21 @@ pnpm format:check
 docker compose config --quiet
 ```
 
+## 배포 기준
+
+Phase 6 배포 기준은 새 AWS EC2, GHCR image registry, Caddy HTTPS, 실제 SMTP, 운영 `AI_MODE=demo`입니다. 운영 설정은 [`compose.production.yaml`](compose.production.yaml), [`infra/Caddyfile.production`](infra/Caddyfile.production), [`.env.production.example`](.env.production.example)을 기준으로 합니다.
+
+배포 workflow는 `CI`가 `main`에서 성공하면 GHCR에 Web/API 이미지를 push하고 EC2에서 `docker compose pull`, migration deploy, `docker compose up -d`, HTTPS smoke를 실행합니다.
+
+운영 smoke 대상:
+
+- Web: `https://<domain>/`
+- API ready: `https://<domain>/api/health/ready`
+- Swagger UI: `https://<domain>/api/docs/`
+- OpenAPI: `https://<domain>/api/openapi.json`
+- 실제 SMTP 회원가입 인증 메일
+- 자료·댓글 CRUD와 AI demo 요약 badge
+
 ## 모노레포 구조
 
 ```text
@@ -97,6 +129,7 @@ docs                 제품·기술 설계 문서
 
 - [`docs/11-current-infrastructure.md`](docs/11-current-infrastructure.md): CI와 Docker 기반 구조
 - [`docs/12-authentication-development-guide.md`](docs/12-authentication-development-guide.md): 인증 실행·접속·데이터 확인 가이드
+- [`docs/13-deployment-runbook.md`](docs/13-deployment-runbook.md): Phase 6 EC2/GHCR 배포 runbook
 
 ## Health 계약
 

@@ -1,10 +1,10 @@
 # 현재 CI 및 컨테이너 구조
 
-> 확인 기준: 2026-06-19, `main` 브랜치 `1df6ea5`
+> 확인 기준: 2026-06-25, Phase 5 완료 이후
 
-## 1. 전체 구조 요약
+## 전체 구조
 
-현재 저장소는 pnpm workspace 기반 모노레포이며, 실행 단위는 Web, API, PostgreSQL이다. 전체 Docker 환경에서는 Caddy가 외부 요청을 받는 단일 진입점 역할을 추가로 담당한다.
+현재 저장소는 pnpm workspace 기반 모노레포이며 실행 단위는 Web, API, PostgreSQL, Mailpit, Caddy다. 전체 Docker 환경에서는 Caddy가 외부 요청을 받는 단일 진입점이고 `/api/*` 요청은 API로, 나머지는 Web으로 전달한다.
 
 ```text
 사용자 또는 CI
@@ -12,217 +12,184 @@
       | http://localhost:${APP_PORT:-8080}
       v
     Caddy
-      |-- /api/*  --> API (Express, port 4000) --> PostgreSQL (port 5432)
-      `-- 그 외   --> Web (Next.js, port 3000)
+      |-- /api/*  -> API (Express, port 4000) -> PostgreSQL (port 5432)
+      `-- 그 외   -> Web (Next.js, port 3000)
+
+개발 인증 메일: API -> Mailpit (SMTP 1025, UI 8025)
 ```
 
 | 구성 요소 | 구현 | 역할 |
 | --- | --- | --- |
-| `apps/web` | Next.js 16, React 19 | 웹 UI와 상태 화면 |
-| `apps/api` | Express 5, Prisma 7 | API, health endpoint, DB 연결 |
+| `apps/web` | Next.js 16, React 19 | 인증, 자료, 댓글, AI 요약 검토 UI |
+| `apps/api` | Express 5, Prisma 7 | health, auth, source, comment, URL extract, AI summarize, OpenAPI |
 | `packages/shared` | TypeScript, Zod | Web/API 공용 schema와 타입 |
 | `db` | PostgreSQL 17 Alpine | 애플리케이션 데이터베이스 |
+| `mailpit` | Mailpit | 개발·CI 이메일 인증 확인 |
 | `caddy` | Caddy 2.10 Alpine | Web/API same-origin reverse proxy |
 
-현재 Prisma schema에는 업무 모델이나 migration이 없고, DB는 readiness 확인을 위한 실제 `SELECT 1` 연결에 사용된다.
-
-## 2. GitHub Actions
+## GitHub Actions
 
 워크플로는 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) 한 개이며 이름은 `CI`다.
 
 ### 실행 조건
 
-- 모든 Pull Request에서 실행
-- `main` 브랜치에 push할 때 실행
-- 동일한 Git ref에서 새 실행이 시작되면 이전 실행을 취소
-- 수동 실행(`workflow_dispatch`)은 현재 지원하지 않음
+- 모든 Pull Request
+- `main` 브랜치 push
+- 동일 Git ref의 새 실행이 시작되면 이전 실행 취소
 
 ### `quality` job
 
-Ubuntu 최신 runner에서 최대 15분 동안 실행한다.
+PostgreSQL service container를 띄운 뒤 기본 품질 gate를 실행한다.
 
-1. PostgreSQL `17-alpine` service container 실행
-2. repository checkout
-3. pnpm `10.34.0`, Node.js `24.16.0` 설정
-4. pnpm store cache 사용
-5. `pnpm install --frozen-lockfile`
+1. checkout
+2. pnpm `10.34.0`, Node.js `24.16.0` 설정
+3. `pnpm install --frozen-lockfile`
+4. PostgreSQL readiness wait
+5. `pnpm db:deploy`
 6. `pnpm lint`
 7. `pnpm typecheck`
 8. `pnpm test`
 9. `pnpm build`
 10. `pnpm format:check`
 
-테스트 환경에는 다음 값이 고정된다.
-
-```text
-NODE_ENV=test
-DATABASE_URL=postgresql://sourcewiki:sourcewiki_local@localhost:5432/sourcewiki?schema=public
-```
-
-즉 lint, 타입 검사, 테스트, 전체 빌드, 포맷 검사를 하나의 품질 게이트로 묶고 있다. 한 단계가 실패하면 이후 단계는 실행되지 않는다.
+테스트 DB URL은 `127.0.0.1`을 사용해 GitHub Actions의 IPv6/localhost 연결 흔들림을 피한다.
 
 ### `compose-smoke` job
 
-Ubuntu 최신 runner에서 최대 20분 동안 실제 컨테이너 스택을 검증한다.
+실제 Docker Compose stack을 runner에서 빌드하고 Caddy 경유 smoke를 실행한다.
 
-1. `docker compose config --quiet`로 Compose 문법과 변수 치환 확인
-2. `docker compose up --build --wait --wait-timeout 180`으로 전체 이미지 빌드 및 실행
-3. `http://localhost:8080/` 응답 확인
-4. `http://localhost:8080/api/health/live` 응답 확인
-5. `http://localhost:8080/api/health/ready` 응답 확인
-6. 실패한 경우 전체 서비스 로그 출력
-7. 성공 여부와 관계없이 `docker compose down --volumes`로 컨테이너와 CI용 volume 제거
+1. `docker compose config --quiet`
+2. `docker compose up --build --wait --wait-timeout 180`
+3. `/`
+4. `/api/health/live`
+5. `/api/health/ready`
+6. `/api/sources`
+7. `/api/openapi.json`
+8. `/api/docs/`
+9. 실패 시 `docker compose logs`
+10. 항상 `docker compose down --volumes`
 
-`quality`와 `compose-smoke` 사이에는 `needs` 의존성이 없으므로 서로 독립적으로 병렬 실행될 수 있다.
+### `browser-e2e` job
 
-### 현재 Actions에 없는 기능
+Chromium Playwright를 설치하고 hybrid 개발 방식으로 E2E를 실행한다.
 
-- Docker Hub, GHCR 등의 container registry 로그인 및 이미지 push
-- image tag 또는 release 생성
-- 운영/스테이징 서버 배포
-- cloud provider 연동
-- database migration 실행
-- GitHub Environment와 repository secret을 이용한 배포 승인
-- dependency/security scan 및 SBOM 생성
-- 테스트 coverage 업로드
+1. checkout
+2. pnpm/Node 설정
+3. `pnpm install --frozen-lockfile`
+4. `pnpm exec playwright install --with-deps chromium`
+5. `pnpm dev:infra`
+6. PostgreSQL readiness wait
+7. `pnpm db:deploy`
+8. `pnpm db:seed`
+9. `pnpm test:e2e`
+10. 항상 `docker compose down --volumes`
 
-따라서 현재 GitHub Actions는 **검증 전용 CI**이며 CD는 구현되어 있지 않다.
+### `Deploy` workflow
 
-## 3. Docker Compose에 실행되는 것
+[`Deploy`](../.github/workflows/deploy.yml)는 `CI` workflow가 `main`에서 성공하면 실행된다. 수동 실행도 지원한다.
 
-[`compose.yaml`](../compose.yaml)은 다음 4개 서비스를 실행한다.
+- Web/API image를 GHCR에 `<git-sha>`와 `main` tag로 push
+- EC2에 `compose.production.yaml`과 `infra/Caddyfile.production` 업로드
+- EC2에서 `.env.production` 존재 확인
+- GHCR login 후 `docker compose pull`
+- `docker compose run --rm api pnpm --filter @sourcewiki/api db:deploy`
+- `docker compose up -d`
+- HTTPS Web, health, OpenAPI, Swagger smoke
+
+필수 secret은 `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`, `GHCR_TOKEN`, `APP_DOMAIN`이다.
+
+## Compose 서비스
+
+[`compose.yaml`](../compose.yaml)은 로컬 개발과 CI smoke 기준의 stack이다.
+
+### `mailpit`
+
+- 이미지: `axllent/mailpit:v1.27`
+- host port: SMTP `${MAILPIT_SMTP_PORT:-1025}`, UI `${MAILPIT_UI_PORT:-8025}`
+- `/mailpit readyz` health check
+- 운영 배포에서는 제외한다.
 
 ### `db`
 
-- 외부 이미지: `postgres:17-alpine`
-- 기본 host port: `5432`
-- 데이터 경로 `/var/lib/postgresql/data`를 `postgres_data` named volume에 저장
-- `pg_isready` health check 사용
-- 컨테이너 재시작 정책: `unless-stopped`
+- 이미지: `postgres:17-alpine`
+- host port: `${POSTGRES_PORT:-5432}`
+- 데이터: `postgres_data` named volume
+- `pg_isready` health check
+- 운영 배포에서는 host port를 공개하지 않는다.
 
 ### `api`
 
-- `apps/api/Dockerfile`을 repository root context에서 로컬 빌드
+- build: `apps/api/Dockerfile`
 - 내부 port: `4000`
-- DB가 healthy가 된 뒤 시작
-- `DATABASE_URL`의 host는 Compose service 이름인 `db`
-- `/api/health/ready`를 자체 health check로 사용
-- host port에 직접 publish하지 않으며 Caddy를 통해 접근
+- `DATABASE_URL`은 Compose service 이름 `db`를 사용
+- SMTP는 로컬 Compose에서 `mailpit:1025` 사용
+- `/api/health/ready` health check
+- Web/API host port는 직접 publish하지 않고 Caddy로 접근
 
 ### `web`
 
-- `apps/web/Dockerfile`을 repository root context에서 로컬 빌드
+- build: `apps/web/Dockerfile`
 - 내부 port: `3000`
-- API가 healthy가 된 뒤 시작
-- `/` 응답을 자체 health check로 사용
-- host port에 직접 publish하지 않으며 Caddy를 통해 접근
+- server-side API 요청은 `API_INTERNAL_URL=http://api:4000`
+- `/` health check
 
 ### `caddy`
 
-- 외부 이미지: `caddy:2.10-alpine`
-- 기본 host port `8080`을 container port `80`에 연결
-- `/api/*`는 `api:4000`, 나머지는 `web:3000`으로 전달
-- API와 Web이 모두 healthy가 된 뒤 시작
+- 이미지: `caddy:2.10-alpine`
+- host port: `${APP_PORT:-8080}` -> container `80`
+- 설정: [`infra/Caddyfile`](../infra/Caddyfile)
 - `caddy_data`, `caddy_config` named volume 사용
 
-서비스 시작 의존 관계는 다음과 같다.
+서비스 준비 순서는 다음과 같다.
 
 ```text
-db healthy -> api healthy -> web healthy -> caddy start
-                     `----------------------^
+db healthy + mailpit healthy -> api healthy -> web healthy -> caddy start
 ```
 
-Caddy는 API와 Web 둘 다 healthy여야 시작한다. Web도 API health에 의존하므로 API 또는 DB 장애 시 전체 외부 진입점이 준비되지 않는다.
+## Docker 이미지 상태
 
-## 4. Web Docker 이미지에 포함되는 것
+로컬 `compose.yaml`은 build 기반 이미지를 사용한다. 운영 [`compose.production.yaml`](../compose.production.yaml)은 GHCR image를 사용한다.
 
-Web 이미지는 `node:24.16-alpine`을 기반으로 다음 항목을 포함한다.
+Deploy workflow가 push하는 운영 image tag는 다음과 같다.
 
-- pnpm `10.34.0`
-- root workspace 설정과 lockfile
-- 전체 workspace production/dev dependency가 설치된 `/app/node_modules`
-- `apps/web` 소스와 Next.js 빌드 결과인 `.next`
-- `packages/shared` 소스와 `dist` 빌드 결과
-- 실행에 직접 필요하지 않은 API package manifest
-- 빌드 도구와 dev dependency
+- `ghcr.io/<owner>/sourcewiki-api:<git-sha>`
+- `ghcr.io/<owner>/sourcewiki-web:<git-sha>`
+- `ghcr.io/<owner>/sourcewiki-api:main`
+- `ghcr.io/<owner>/sourcewiki-web:main`
 
-컨테이너 시작 명령은 다음과 같다.
+EC2 배포는 rollback을 위해 `<git-sha>` tag를 사용한다.
 
-```text
-pnpm --filter @sourcewiki/web start --hostname 0.0.0.0
-```
+## 환경 변수와 포트
 
-현재 Dockerfile은 stage 이름만 `build`로 지정된 단일 스테이지다. 별도 runtime stage나 Next.js `output: 'standalone'` 구성이 없으므로 빌드 도구, dev dependency, 소스가 최종 이미지에도 남는다.
-
-## 5. API Docker 이미지에 포함되는 것
-
-API 이미지도 `node:24.16-alpine` 기반 단일 스테이지이며 다음 항목을 포함한다.
-
-- pnpm `10.34.0`
-- root workspace 설정과 lockfile
-- 전체 workspace production/dev dependency가 설치된 `/app/node_modules`
-- `apps/api` 소스
-- Prisma generate 결과인 `apps/api/src/generated/prisma`
-- TypeScript 빌드 결과인 `apps/api/dist`
-- `packages/shared` 소스와 `dist` 빌드 결과
-- 실행에 직접 필요하지 않은 Web package manifest
-- 빌드 도구와 dev dependency
-
-컨테이너 시작 명령은 다음과 같다.
-
-```text
-node apps/api/dist/server.js
-```
-
-## 6. Docker에 포함되지 않는 것
-
-`.dockerignore`에 따라 다음 항목은 build context에서 제외된다.
-
-- `.git`, `.github`
-- host의 모든 `node_modules`
-- 기존 `.next`, `dist`, coverage
-- `.env`
-- log 파일
-
-의존성과 빌드 결과는 host 것을 복사하지 않고 이미지 빌드 과정에서 새로 생성한다. `.env`도 이미지에 복사하지 않고 Compose가 필요한 환경 변수를 컨테이너 실행 시 전달한다.
-
-## 7. 이미지 저장 및 배포 상태
-
-현재 Compose의 Web/API build에는 `image:` 이름이 없다. 따라서 `docker compose up --build` 시 Docker가 Compose 프로젝트 기준의 로컬 이미지 이름을 자동 생성하지만, 이 이미지를 외부 registry에 올리지는 않는다.
-
-외부에서 내려받는 이미지는 다음 두 개다.
-
-- `postgres:17-alpine`
-- `caddy:2.10-alpine`
-
-프로젝트에서 직접 빌드하는 이미지는 다음 두 개다.
-
-- Web: `apps/web/Dockerfile`
-- API: `apps/api/Dockerfile`
-
-GitHub Actions에서도 이 이미지들은 smoke test runner 내부에서 임시로만 빌드된다. job 종료 후 재사용하거나 배포할 artifact로 보관하지 않는다.
-
-## 8. 환경 변수와 포트
-
-| 변수 | 기본값 | 현재 사용처 |
+| 변수 | 기본값 | 사용처 |
 | --- | --- | --- |
 | `APP_PORT` | `8080` | Caddy host port |
-| `POSTGRES_PORT` | `5432` | PostgreSQL host port |
+| `POSTGRES_PORT` | `5432` | 로컬 PostgreSQL host port |
+| `MAILPIT_SMTP_PORT` | `1025` | 로컬 Mailpit SMTP |
+| `MAILPIT_UI_PORT` | `8025` | 로컬 Mailpit UI |
 | `POSTGRES_DB` | `sourcewiki` | DB 생성 및 API 연결 |
-| `POSTGRES_USER` | `sourcewiki` | DB 인증 및 API 연결 |
-| `POSTGRES_PASSWORD` | `sourcewiki_local` | DB 인증 및 API 연결 |
+| `POSTGRES_USER` | `sourcewiki` | DB 인증 |
+| `POSTGRES_PASSWORD` | `sourcewiki_local` | DB 인증 |
 | `LOG_LEVEL` | `info` | API log level |
-| `API_PROXY_TARGET` | 개발 시 `http://localhost:4000` | Docker 밖에서 실행하는 Next.js의 `/api/*` rewrite |
+| `APP_URL` | 개발 `http://localhost:3000` 또는 Docker `http://localhost:8080` | 이메일 링크, Origin 기준 |
+| `API_PROXY_TARGET` | `http://localhost:4000` | Next.js 개발 rewrite |
+| `API_INTERNAL_URL` | `http://localhost:4000` 또는 `http://api:4000` | Web server-side API 호출 |
+| `COOKIE_SECURE` | `false` | 운영 HTTPS에서는 `true` |
+| `AI_MODE` | `disabled` | `disabled`, `demo`, `ollama` |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama mode |
+| `OLLAMA_MODEL` | `gemma4:e4b` | Ollama mode |
+| `AI_TIMEOUT_MS` | `180000` | AI 요청 timeout |
 
-`.env.example`의 `WEB_PORT`와 `API_PORT`는 전체 Docker Compose의 host port publish에는 현재 사용되지 않는다. Compose 내부 Web/API port는 각각 `3000`, `4000`으로 고정되어 있다.
+운영 Phase 6 기본값은 `COOKIE_SECURE=true`, `AI_MODE=demo`, 실제 SMTP 설정이다.
 
-## 9. 현재 상태에서의 주요 개선 후보
+## 남은 Phase 6 작업
 
-1. Web/API Dockerfile을 builder/runtime multi-stage로 분리해 최종 이미지 크기와 공격 표면 축소
-2. Web은 Next.js standalone output을 사용하고 runtime에 필요한 파일만 복사
-3. API는 production dependency와 `dist`, Prisma runtime 산출물만 runtime stage에 복사
-4. 배포가 필요해질 때 GHCR 등 registry에 immutable tag로 push하는 별도 CD workflow 추가
-5. 운영 환경에서는 PostgreSQL host port 비공개화, secret 외부 주입, TLS와 운영용 Caddy 설정 적용
-6. 실제 DB 모델 도입 시 migration 생성·검증·배포 절차 추가
+1. EC2 서버 bootstrap과 `/opt/sourcewiki/.env.production` 배치
+2. GitHub repository secret 등록
+3. DNS A record를 EC2 public IP로 연결
+4. 첫 Deploy workflow 실행
+5. HTTPS 회원가입, CRUD, AI demo smoke
+6. Web/API Dockerfile multi-stage runtime image 최적화
+7. `pg_dump` backup과 restore dry-run
 
-현재 Phase 1 목적은 로컬 실행 가능한 기반과 CI 검증이므로, 위 항목들은 운영 배포 단계에서 구현할 후속 작업이다.
+자세한 배포 절차는 [`docs/13-deployment-runbook.md`](./13-deployment-runbook.md)를 기준으로 한다.
