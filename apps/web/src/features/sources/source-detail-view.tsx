@@ -76,6 +76,26 @@ function DetailVisual({
   );
 }
 
+function AiThinkingIndicator({ label }: { label: string }) {
+  return (
+    <div className="ai-thinking" role="status" aria-label={label}>
+      <div className="ai-thinking-mark" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="ai-thinking-dots" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
+    </div>
+  );
+}
+
 export function SourceDetailView({ id, canComment }: { id: string; canComment: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -297,7 +317,7 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
                   summarize.isPending || applySummary.isPending || chat.isPending || !source.rawText
                 }
               >
-                {summarize.isPending ? '생성 중' : 'AI 어시스턴트'}
+                {summarize.isPending ? '생성 중' : 'AI Assistant'}
               </button>
               {!source.rawText ? <small>정제 본문이 필요합니다.</small> : null}
             </div>
@@ -367,18 +387,20 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
             <div className="ai-assistant-body">
               {activeAiTab === 'summary' ? (
                 <>
-                  <div className="ai-chat-message ai-chat-message--assistant">
-                    <span>AI</span>
-                    <p>
-                      {summarize.isPending
-                        ? '원문을 읽고 요약 초안을 생성하고 있습니다.'
-                        : visibleSummary
+                  {summarize.isPending ? (
+                    <AiThinkingIndicator label="AI가 요약 초안을 생성 중입니다." />
+                  ) : (
+                    <div className="ai-chat-message ai-chat-message--assistant">
+                      <span>AI</span>
+                      <p>
+                        {visibleSummary
                           ? isDraftSummary
                             ? '초안을 만들었습니다. 적용 전 내용을 확인해 주세요.'
                             : '저장된 AI 요약입니다. 원문은 그대로 두고 이곳에서 확인합니다.'
                           : 'AI 요약을 요청하면 이곳에서 초안을 검토할 수 있습니다.'}
-                    </p>
-                  </div>
+                      </p>
+                    </div>
+                  )}
                   {aiError ? (
                     <div className="form-alert" role="alert">
                       {aiError}
@@ -583,23 +605,7 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
                       <p>{message.content}</p>
                     </div>
                   ))}
-                  {chat.isPending ? (
-                    <div className="ai-thinking" role="status" aria-label="AI가 답변 중입니다.">
-                      <div className="ai-thinking-mark" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                      <div className="ai-thinking-dots" aria-hidden="true">
-                        <i />
-                        <i />
-                        <i />
-                      </div>
-                    </div>
-                  ) : null}
+                  {chat.isPending ? <AiThinkingIndicator label="AI가 답변 중입니다." /> : null}
                   {chatError ? (
                     <div className="form-alert" role="alert">
                       {chatError}
