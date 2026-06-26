@@ -157,6 +157,21 @@ describe('source and comment integration', () => {
     });
   });
 
+  it('requires source text before suggesting questions', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '추천 질문 본문 없는 자료',
+      originalUrl: 'https://example.test/no-suggestion-text',
+      sourceType: 'article',
+      tags: [],
+    });
+    sourceIds.push(source.id);
+
+    await expect(sources.suggestQuestionsForSource(source.id, ownerId)).rejects.toMatchObject({
+      code: 'SOURCE_TEXT_REQUIRED',
+      status: 409,
+    });
+  });
+
   it('enforces ownership before summarizing', async () => {
     const source = await sources.createSource(ownerId, {
       title: '요약 권한 자료',
@@ -186,6 +201,22 @@ describe('source and comment integration', () => {
     await expect(
       sources.chatWithSource(source.id, otherId, { message: '질문', history: [] }),
     ).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      status: 403,
+    });
+  });
+
+  it('enforces ownership before suggesting questions', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '추천 질문 권한 자료',
+      originalUrl: 'https://example.test/suggestion-owner',
+      sourceType: 'article',
+      rawText: '추천 질문을 만들 수 있는 본문입니다. '.repeat(20),
+      tags: [],
+    });
+    sourceIds.push(source.id);
+
+    await expect(sources.suggestQuestionsForSource(source.id, otherId)).rejects.toMatchObject({
       code: 'FORBIDDEN',
       status: 403,
     });

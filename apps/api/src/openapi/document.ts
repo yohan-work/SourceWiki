@@ -7,6 +7,7 @@ import {
   extractUrlResponseSchema,
   sourceChatRequestSchema,
   sourceChatResponseSchema,
+  sourceQuestionSuggestionsResponseSchema,
   summarizeSourceResponseSchema,
   sourceCreateRequestSchema,
   sourceDetailResponseSchema,
@@ -70,6 +71,7 @@ export const openApiDocument = {
       SummarizeSourceResponse: schema(summarizeSourceResponseSchema),
       SourceChatRequest: schema(sourceChatRequestSchema),
       SourceChatResponse: schema(sourceChatResponseSchema),
+      SourceQuestionSuggestionsResponse: schema(sourceQuestionSuggestionsResponseSchema),
     },
   },
   paths: {
@@ -169,6 +171,24 @@ export const openApiDocument = {
         requestBody: { required: true, ...json('SourceChatRequest') },
         responses: {
           200: response('AI 대화 답변', 'SourceChatResponse'),
+          ...errorResponses,
+          409: response('질문할 본문 없음', 'ApiError'),
+          502: response('AI 응답 형식 오류', 'ApiError'),
+          503: response('AI 비활성 또는 사용 불가', 'ApiError'),
+          504: response('AI 요청 시간 초과', 'ApiError'),
+        },
+      },
+    },
+    '/sources/{id}/ai/suggestions': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      post: {
+        tags: ['Sources'],
+        summary: '저장된 본문으로 AI 추천 질문 생성',
+        security: [{ accessCookie: [] }],
+        responses: {
+          200: response('AI 추천 질문', 'SourceQuestionSuggestionsResponse'),
           ...errorResponses,
           409: response('질문할 본문 없음', 'ApiError'),
           502: response('AI 응답 형식 오류', 'ApiError'),

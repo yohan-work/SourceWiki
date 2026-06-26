@@ -22,8 +22,21 @@ describe('source summarizer', () => {
     vi.stubEnv('AI_MODE', 'demo');
     const { chatWithText } = await loadSummarizer();
 
-    await expect(chatWithText('원문', '무엇을 말하나요?')).resolves.toMatchObject({
+    await expect(
+      chatWithText('원문 문단입니다. 근거로 보여줄 내용입니다.', '무엇을 말하나요?'),
+    ).resolves.toMatchObject({
       mode: 'demo',
+      citations: expect.any(Array),
+    });
+  });
+
+  it('returns question suggestions in demo mode', async () => {
+    vi.stubEnv('AI_MODE', 'demo');
+    const { suggestQuestionsForText } = await loadSummarizer();
+
+    await expect(suggestQuestionsForText('원문')).resolves.toMatchObject({
+      mode: 'demo',
+      questions: expect.arrayContaining(['이 글의 핵심 주장은 무엇인가요?']),
     });
   });
 
@@ -73,9 +86,30 @@ describe('source summarizer', () => {
     );
     const { chatWithText } = await loadSummarizer();
 
-    await expect(chatWithText('원문', '질문')).resolves.toMatchObject({
+    await expect(
+      chatWithText('원문 기반 답변입니다. 관련 근거 문단입니다.', '질문'),
+    ).resolves.toMatchObject({
       mode: 'ollama',
       answer: '원문 기반 답변입니다.',
+      citations: [{ index: 1, text: '원문 기반 답변입니다. 관련 근거 문단입니다.' }],
+    });
+  });
+
+  it('parses Ollama question suggestions', async () => {
+    vi.stubEnv('AI_MODE', 'ollama');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          response: '{"questions":["핵심 주장은 무엇인가요?","한계는 무엇인가요?"]}',
+        }),
+      ),
+    );
+    const { suggestQuestionsForText } = await loadSummarizer();
+
+    await expect(suggestQuestionsForText('원문')).resolves.toMatchObject({
+      mode: 'ollama',
+      questions: ['핵심 주장은 무엇인가요?', '한계는 무엇인가요?'],
     });
   });
 

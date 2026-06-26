@@ -67,6 +67,13 @@ export function createSourceRouter() {
       res.json({ data, meta: { requestId: res.locals.requestId } });
     },
   );
+  router.post('/:id/ai/suggestions', authenticate, requireVerifiedUser, async (req, res) => {
+    const data = await sources.suggestQuestionsForSource(
+      String(req.params.id),
+      res.locals.auth.userId,
+    );
+    res.json({ data, meta: { requestId: res.locals.requestId } });
+  });
   router.post(
     '/',
     authenticate,

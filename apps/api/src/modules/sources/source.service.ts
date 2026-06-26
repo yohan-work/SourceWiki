@@ -6,7 +6,7 @@ import type {
 
 import { AppError } from '../../errors/app-error.js';
 import { prisma } from '../../lib/database.js';
-import { chatWithText, summarizeText } from './source-summarizer.js';
+import { chatWithText, summarizeText, suggestQuestionsForText } from './source-summarizer.js';
 
 const sourceInclude = {
   user: { select: { id: true, nickname: true } },
@@ -315,4 +315,15 @@ export async function chatWithSource(id: string, userId: string, input: SourceCh
   if (!source?.rawText?.trim())
     throw new AppError(409, 'SOURCE_TEXT_REQUIRED', '질문할 본문이 필요합니다.');
   return chatWithText(source.rawText, input.message, input.history);
+}
+
+export async function suggestQuestionsForSource(id: string, userId: string) {
+  await assertOwner(id, userId);
+  const source = await prisma.source.findUnique({
+    where: { id },
+    select: { rawText: true },
+  });
+  if (!source?.rawText?.trim())
+    throw new AppError(409, 'SOURCE_TEXT_REQUIRED', '질문할 본문이 필요합니다.');
+  return suggestQuestionsForText(source.rawText);
 }

@@ -6,6 +6,8 @@ import {
   healthResponseSchema,
   paginationQuerySchema,
   publicHttpUrlSchema,
+  sourceChatResponseSchema,
+  sourceQuestionSuggestionsResponseSchema,
   signupRequestSchema,
   sourceUpdateRequestSchema,
 } from './index.js';
@@ -52,6 +54,25 @@ describe('shared API schemas', () => {
 
   it('rejects an empty source patch', () => {
     expect(sourceUpdateRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('accepts AI chat citations and suggested questions', () => {
+    expect(
+      sourceChatResponseSchema.safeParse({
+        data: {
+          answer: '원문 기반 답변입니다.',
+          citations: [{ index: 1, text: '근거 문단입니다.' }],
+          mode: 'demo',
+        },
+        meta: { requestId: 'request-1' },
+      }).success,
+    ).toBe(true);
+    expect(
+      sourceQuestionSuggestionsResponseSchema.safeParse({
+        data: { questions: ['핵심 주장은 무엇인가요?'], mode: 'demo' },
+        meta: { requestId: 'request-1' },
+      }).success,
+    ).toBe(true);
   });
 
   it('allows URL fragments for extraction previews', () => {

@@ -195,6 +195,21 @@ export const sourceChatRequestSchema = z.object({
 export const sourceChatResponseSchema = z.object({
   data: z.object({
     answer: z.string().trim().min(1).max(10_000),
+    citations: z
+      .array(
+        z.object({
+          index: z.number().int().min(1),
+          text: z.string().trim().min(1).max(1200),
+        }),
+      )
+      .max(3),
+    mode: z.enum(['ollama', 'demo']),
+  }),
+  meta: apiMetaSchema,
+});
+export const sourceQuestionSuggestionsResponseSchema = z.object({
+  data: z.object({
+    questions: z.array(z.string().trim().min(1).max(200)).min(1).max(5),
     mode: z.enum(['ollama', 'demo']),
   }),
   meta: apiMetaSchema,
@@ -307,6 +322,9 @@ export type SummarizeSourceResponse = z.infer<typeof summarizeSourceResponseSche
 export type SourceChatMessage = z.infer<typeof sourceChatMessageSchema>;
 export type SourceChatRequest = z.infer<typeof sourceChatRequestSchema>;
 export type SourceChatResponse = z.infer<typeof sourceChatResponseSchema>;
+export type SourceQuestionSuggestionsResponse = z.infer<
+  typeof sourceQuestionSuggestionsResponseSchema
+>;
 export type Pagination = z.infer<typeof paginationSchema>;
 export type CommentRequest = z.infer<typeof commentRequestSchema>;
 export type SourceComment = z.infer<typeof commentSchema>;
