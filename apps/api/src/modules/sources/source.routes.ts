@@ -9,9 +9,14 @@ import {
 
 import { authenticate } from '../../middleware/authenticate.js';
 import { optionalAuthenticate, requireVerifiedUser } from '../../middleware/authorize.js';
+import { createRateLimit } from '../../middleware/rate-limit.js';
 import { validateBody, validateQuery } from '../../middleware/validate.js';
 import * as comments from '../comments/comment.service.js';
 import * as sources from './source.service.js';
+
+const aiSummaryLimit = createRateLimit(10);
+const aiChatLimit = createRateLimit(30);
+const aiSuggestionsLimit = createRateLimit(20);
 
 export function createSourceRouter() {
   const router = Router();
@@ -49,12 +54,19 @@ export function createSourceRouter() {
     const data = await sources.getSource(String(req.params.id), res.locals.auth?.userId);
     res.json({ data, meta: { requestId: res.locals.requestId } });
   });
-  router.post('/:id/summarize', authenticate, requireVerifiedUser, async (req, res) => {
-    const data = await sources.summarizeSource(String(req.params.id), res.locals.auth.userId);
-    res.json({ data, meta: { requestId: res.locals.requestId } });
-  });
+  router.post(
+    '/:id/summarize',
+    aiSummaryLimit,
+    authenticate,
+    requireVerifiedUser,
+    async (req, res) => {
+      const data = await sources.summarizeSource(String(req.params.id), res.locals.auth.userId);
+      res.json({ data, meta: { requestId: res.locals.requestId } });
+    },
+  );
   router.post(
     '/:id/chat',
+    aiChatLimit,
     authenticate,
     requireVerifiedUser,
     validateBody(sourceChatRequestSchema),
@@ -67,13 +79,19 @@ export function createSourceRouter() {
       res.json({ data, meta: { requestId: res.locals.requestId } });
     },
   );
-  router.post('/:id/ai/suggestions', authenticate, requireVerifiedUser, async (req, res) => {
-    const data = await sources.suggestQuestionsForSource(
-      String(req.params.id),
-      res.locals.auth.userId,
-    );
-    res.json({ data, meta: { requestId: res.locals.requestId } });
-  });
+  router.post(
+    '/:id/ai/suggestions',
+    aiSuggestionsLimit,
+    authenticate,
+    requireVerifiedUser,
+    async (req, res) => {
+      const data = await sources.suggestQuestionsForSource(
+        String(req.params.id),
+        res.locals.auth.userId,
+      );
+      res.json({ data, meta: { requestId: res.locals.requestId } });
+    },
+  );
   router.post(
     '/',
     authenticate,

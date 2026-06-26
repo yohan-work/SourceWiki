@@ -1,5 +1,4 @@
 import { Router, type Response } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import {
   checkEmailRequestSchema,
   loginRequestSchema,
@@ -12,11 +11,11 @@ import { env } from '../../config/env.js';
 import { AppError } from '../../errors/app-error.js';
 import { smtpMailer, type Mailer } from '../../integrations/mail.js';
 import { authenticate } from '../../middleware/authenticate.js';
+import { createRateLimit } from '../../middleware/rate-limit.js';
 import { validateBody } from '../../middleware/validate.js';
 import * as authService from './auth.service.js';
 
-const authLimit = (limit: number, windowMs = 15 * 60 * 1_000) =>
-  rateLimit({ windowMs, limit, standardHeaders: 'draft-8', legacyHeaders: false });
+const authLimit = createRateLimit;
 
 const cookieBase = { httpOnly: true, secure: env.COOKIE_SECURE } as const;
 
