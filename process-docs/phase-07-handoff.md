@@ -29,6 +29,14 @@
   - 용어/개념
 - 추천 질문, citations, 읽기 가이드 UI 스타일 추가
 - 추천 질문 API, chat citations, OpenAPI, shared schema 테스트 보강
+- 공통 `createRateLimit` 미들웨어 추가
+- 인증 API의 기존 rate limit을 공통 미들웨어로 정리
+- URL 추출 API에 15분 20회 rate limit 추가
+- AI 요약 API에 15분 10회 rate limit 추가
+- AI 대화 API에 15분 30회 rate limit 추가
+- AI 추천 질문 API에 15분 20회 rate limit 추가
+- 긴 AI 요청이 Next dev rewrite proxy에서 `socket hang up`을 내지 않도록 `/ai-proxy/*` 전용 route 추가
+- Web AI 요청 경로를 `/api/sources/*`에서 `/ai-proxy/sources/*`로 변경
 
 ## 커밋
 
@@ -37,17 +45,30 @@
 ```text
 2f1ead2 feat(api): add source AI suggestions and citations
 6da8c96 feat(web): surface AI question suggestions
+eb9a291 docs: add phase 7 handoff
 ```
 
 커밋 분리 기준:
 
 - `2f1ead2`: shared schema/type, API service/router, AI 생성 로직, OpenAPI, API/shared 테스트
 - `6da8c96`: Next proxy route, Web API client, 상세 AI 패널 UI, CSS
+- `eb9a291`: Phase 7 handoff 문서
+
+후속 보강 커밋 예정:
+
+- API rate limit 보강
+- Web AI proxy rewrite 우회
+- Phase 7 handoff 문서 갱신
 
 ## 추가된 주요 파일
 
 ```text
 apps/web/src/app/api/sources/[id]/ai/suggestions/route.ts
+apps/web/src/app/ai-proxy/sources/[id]/summarize/route.ts
+apps/web/src/app/ai-proxy/sources/[id]/chat/route.ts
+apps/web/src/app/ai-proxy/sources/[id]/suggestions/route.ts
+apps/web/src/lib/api/source-ai-proxy.ts
+apps/api/src/middleware/rate-limit.ts
 process-docs/phase-07-handoff.md
 ```
 
@@ -59,6 +80,8 @@ apps/api/src/modules/sources/source-summarizer.test.ts
 apps/api/src/modules/sources/source.service.ts
 apps/api/src/modules/sources/source.routes.ts
 apps/api/src/modules/sources/source.integration.test.ts
+apps/api/src/modules/auth/auth.routes.ts
+apps/api/src/modules/tools/tools.routes.ts
 apps/api/src/openapi/document.ts
 apps/api/src/openapi/document.test.ts
 apps/web/src/features/sources/source-api.ts
@@ -129,6 +152,17 @@ POST /api/sources/:id/ai/suggestions
 504 AI_TIMEOUT
 ```
 
+### 목적별 rate limit
+
+남용 시 비용이 큰 API에 목적별 rate limit을 추가했다. 제한 초과 시 Express rate limit 기본 동작으로 `429 Too Many Requests`가 반환된다.
+
+```text
+POST /api/tools/extract-url              15분 20회
+POST /api/sources/:id/summarize          15분 10회
+POST /api/sources/:id/chat               15분 30회
+POST /api/sources/:id/ai/suggestions     15분 20회
+```
+
 ## Web 동작 요약
 
 AI 어시스턴트 패널의 `대화` 탭에서 아직 대화가 없을 때 추천 질문이 표시된다.
@@ -142,6 +176,16 @@ AI 어시스턴트 패널의 `대화` 탭에서 아직 대화가 없을 때 추�
 7. AI 답변과 근거 문단 표시
 
 추천 질문 로딩 실패 시에는 직접 질문 입력 안내만 보여주고, 채팅 기능 자체는 유지된다.
+
+긴 AI 요청은 Next 개발 서버의 일반 `/api/:path*` rewrite proxy를 타지 않는다. Web client는 다음 전용 route를 호출하고, route handler가 API 서버로 쿠키와 origin을 전달한다.
+
+```text
+/ai-proxy/sources/:id/summarize
+/ai-proxy/sources/:id/chat
+/ai-proxy/sources/:id/suggestions
+```
+
+이 우회는 로컬 개발 중 `Failed to proxy ... socket hang up`이 발생하던 문제를 줄이기 위한 것이다.
 
 ## 검증 상태
 
@@ -163,6 +207,7 @@ pnpm format:check
 
 - `pnpm --filter @sourcewiki/api test`는 sandbox에서 `listen EPERM: operation not permitted 0.0.0.0`로 실패하므로 승인된 일반 실행으로 통과 확인했다.
 - `pnpm --filter @sourcewiki/web build` 실행 중 Next가 `apps/web/next-env.d.ts`를 production route type 경로로 자동 변경했으나, 기능 변경과 무관해 원래 dev route type 경로로 되돌렸다.
+- rate limit과 AI proxy 보강 후에도 `pnpm --filter @sourcewiki/api typecheck`, `pnpm --filter @sourcewiki/api lint`, `pnpm --filter @sourcewiki/api test`, `pnpm --filter @sourcewiki/web typecheck`, `pnpm --filter @sourcewiki/web lint`, `pnpm --filter @sourcewiki/web build`, `pnpm format:check`를 통과했다.
 
 ## 확인된 주의점
 
@@ -174,6 +219,8 @@ pnpm format:check
 - `AI_MODE=ollama`에서는 추천 질문 API도 기존 Ollama `/api/generate` 경로와 동일한 timeout 정책을 사용한다.
 - rawText가 없는 자료에서는 추천 질문과 채팅 모두 409 `SOURCE_TEXT_REQUIRED` 대상이다.
 - 운영 배포는 아직 진행하지 않았다. Phase 6 상태와 동일하게 실제 AWS/EC2/DNS 배포는 대기 상태다.
+- 로컬 개발에서 AI 요약 요청 후 `socket hang up`이 계속 보이면 브라우저 Network 요청 경로가 `/ai-proxy/sources/.../summarize`인지 먼저 확인한다. `/api/sources/.../summarize`라면 Web dev server 재시작이 필요하다.
+- rate limit은 기본 memory store를 사용한다. 단일 프로세스 로컬/과제 제출에는 충분하지만 다중 replica 운영에서는 Redis 같은 공유 store가 필요하다.
 - push는 하지 않았다.
 
 ## 수동 Smoke 권장
@@ -194,6 +241,8 @@ pnpm format:check
 13. rawText 없는 자료에서 AI 버튼 비활성 또는 본문 필요 안내 확인
 14. AI_MODE=disabled에서 추천 질문/대화 오류가 기존 자료 내용을 덮어쓰지 않는지 확인
 15. AI_MODE=ollama와 `OLLAMA_BASE_URL=http://127.0.0.1:11434`로 실제 추천 질문 smoke
+16. AI 요약 요청 Network 경로가 `/ai-proxy/sources/:id/summarize`인지 확인
+17. rate limit 초과 시 429가 반환되는지 API 직접 호출로 확인
 ```
 
 ## 다음 단계
