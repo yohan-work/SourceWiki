@@ -113,7 +113,12 @@ AI 호출과 CRUD transaction을 분리했다. timeout·연결 실패·잘못된
 
 - GitHub Repository URL
 - HTTPS 배포 서비스 URL
-- Swagger `/api/docs` URL
+- Swagger API 문서 URL
+  - 로컬 확인: `http://localhost:4000/api/docs`
+  - 배포 후 제출: `https://<domain>/api/docs/`
+- OpenAPI JSON URL
+  - 로컬 확인: `http://localhost:4000/api/openapi.json`
+  - 배포 후 제출: `https://<domain>/api/openapi.json`
 - README의 로컬 실행·환경변수·architecture·시연 계정
 - 주요 E2E/통합 테스트 결과와 자동 배포 workflow 실행 기록
 

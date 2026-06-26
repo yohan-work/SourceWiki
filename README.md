@@ -114,6 +114,20 @@ Phase 6 배포 기준은 새 AWS EC2, GHCR image registry, Caddy HTTPS, 실제 S
 - 실제 SMTP 회원가입 인증 메일
 - 자료·댓글 CRUD와 AI demo 요약 badge
 
+## 제출 URL
+
+배포 전 로컬 확인 URL:
+
+- Web: `http://localhost:3000/`
+- Swagger API 문서: `http://localhost:4000/api/docs`
+- OpenAPI JSON: `http://localhost:4000/api/openapi.json`
+
+배포 후 제출 URL 형식:
+
+- 배포 서비스: `https://<domain>/`
+- Swagger API 문서: `https://<domain>/api/docs/`
+- OpenAPI JSON: `https://<domain>/api/openapi.json`
+
 ## 모노레포 구조
 
 ```text
