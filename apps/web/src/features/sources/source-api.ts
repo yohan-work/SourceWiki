@@ -9,6 +9,7 @@ import type {
   SourceChatResponse,
   SourceDetailResponse,
   SourceGraphResponse,
+  SourceListQuery,
   SourceListResponse,
   SourceQuestionSuggestionsResponse,
   SourceUpdateRequest,
@@ -18,17 +19,28 @@ import type {
 import { apiFetch } from '@/lib/api/api-client';
 
 const SUMMARY_TIMEOUT_MS = 390_000;
+export type SourceListOptions = Pick<SourceListQuery, 'page' | 'limit' | 'q' | 'tag' | 'type'>;
+
+export function sourceListPath(input: SourceListOptions) {
+  const params = new URLSearchParams({
+    page: String(input.page),
+    limit: String(input.limit),
+  });
+  if (input.q) params.set('q', input.q);
+  if (input.tag) params.set('tag', input.tag);
+  if (input.type) params.set('type', input.type);
+  return `/api/sources?${params.toString()}`;
+}
 
 export const sourceKeys = {
   lists: ['sources'] as const,
-  list: (page: number, limit = 12) => ['sources', { page, limit }] as const,
+  list: (input: SourceListOptions) => ['sources', input] as const,
   detail: (id: string) => ['source', id] as const,
   comments: (id: string) => ['comments', id] as const,
 };
 
 export const sourceApi = {
-  list: (page: number, limit = 12) =>
-    apiFetch<SourceListResponse>(`/api/sources?page=${page}&limit=${limit}`),
+  list: (input: SourceListOptions) => apiFetch<SourceListResponse>(sourceListPath(input)),
   graph: () => apiFetch<SourceGraphResponse>('/api/sources/graph'),
   detail: (id: string) => apiFetch<SourceDetailResponse>(`/api/sources/${id}`),
   create: (input: SourceCreateRequest) =>

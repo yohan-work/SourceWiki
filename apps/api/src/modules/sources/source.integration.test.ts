@@ -46,11 +46,54 @@ describe('source and comment integration', () => {
       });
       sourceIds.push(source.id);
     }
-    const first = await sources.listSources(1, 12);
-    const second = await sources.listSources(2, 12);
+    const first = await sources.listSources({ page: 1, limit: 12 });
+    const second = await sources.listSources({ page: 2, limit: 12 });
     expect(first.data).toHaveLength(12);
     expect(second.data.length).toBeGreaterThanOrEqual(1);
     expect(new Set(first.data.map(({ id }) => id)).has(second.data[0]!.id)).toBe(false);
+  });
+
+  it('filters source lists by query, tag, and type', async () => {
+    const matching = await sources.createSource(ownerId, {
+      title: '벡터 검색 운영 기록',
+      originalUrl: 'https://search.example.test/vector-ops',
+      sourceType: 'paper',
+      rawText: '하이브리드 랭킹과 검색 품질 평가에 대한 실험 본문입니다.',
+      tags: ['Search', 'RAG'],
+    });
+    const tagOnly = await sources.createSource(ownerId, {
+      title: '검색과 무관한 타입 문서',
+      originalUrl: 'https://search.example.test/tag-only',
+      sourceType: 'docs',
+      rawText: '검색 키워드는 포함하지만 타입이 다릅니다.',
+      tags: ['Search'],
+    });
+    const typeOnly = await sources.createSource(ownerId, {
+      title: '벡터 인덱싱 메모',
+      originalUrl: 'https://search.example.test/type-only',
+      sourceType: 'paper',
+      rawText: '본문에는 다른 주제만 있습니다.',
+      tags: ['Database'],
+    });
+    sourceIds.push(matching.id, tagOnly.id, typeOnly.id);
+
+    const byQuery = await sources.listSources({ page: 1, limit: 10, q: '하이브리드 랭킹' });
+    const byTag = await sources.listSources({ page: 1, limit: 10, tag: ' search ' });
+    const byCombined = await sources.listSources({
+      page: 1,
+      limit: 10,
+      q: '검색',
+      tag: 'search',
+      type: 'paper',
+    });
+
+    expect(byQuery.data.map(({ id }) => id)).toContain(matching.id);
+    expect(byTag.data.map(({ id }) => id)).toEqual(
+      expect.arrayContaining([matching.id, tagOnly.id]),
+    );
+    expect(byCombined.data.map(({ id }) => id)).toContain(matching.id);
+    expect(byCombined.data.map(({ id }) => id)).not.toContain(tagOnly.id);
+    expect(byCombined.data.map(({ id }) => id)).not.toContain(typeOnly.id);
   });
 
   it('enforces ownership and cascades comments on delete', async () => {
@@ -120,9 +163,11 @@ describe('source and comment integration', () => {
         [candidate.sourceId, candidate.targetId].includes(graphRight.id),
     );
 
+    const graphLeftNode = graph.nodes.find((node) => node.id === graphLeft.id);
+
     expect(graph.nodes.map((node) => node.id)).toEqual(expect.arrayContaining([graphLeft.id]));
+    expect(graphLeftNode?.tags).toContain('Graph');
     expect(edge?.sharedTags).toContain('Graph');
-    expect(graph.tags.map((tag) => tag.name)).toContain('Graph');
   });
 
   it('requires source text before summarizing', async () => {

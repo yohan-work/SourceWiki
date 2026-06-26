@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import {
   commentRequestSchema,
-  paginationQuerySchema,
   sourceChatRequestSchema,
   sourceCreateRequestSchema,
+  sourceListQuerySchema,
   sourceUpdateRequestSchema,
 } from '@sourcewiki/shared';
+import type { SourceListQuery } from '@sourcewiki/shared';
 
 import { authenticate } from '../../middleware/authenticate.js';
 import { optionalAuthenticate, requireVerifiedUser } from '../../middleware/authorize.js';
@@ -21,9 +22,9 @@ const aiSuggestionsLimit = createRateLimit(20);
 export function createSourceRouter() {
   const router = Router();
 
-  router.get('/', validateQuery(paginationQuerySchema), async (_req, res) => {
-    const { page, limit } = res.locals.validatedQuery as { page: number; limit: number };
-    const result = await sources.listSources(page, limit);
+  router.get('/', validateQuery(sourceListQuerySchema), async (_req, res) => {
+    const query = res.locals.validatedQuery as SourceListQuery;
+    const result = await sources.listSources(query);
     res.json({ ...result, meta: { requestId: res.locals.requestId } });
   });
   router.get('/graph', async (_req, res) => {

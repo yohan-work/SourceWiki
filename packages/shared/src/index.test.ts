@@ -7,6 +7,7 @@ import {
   paginationQuerySchema,
   publicHttpUrlSchema,
   sourceChatResponseSchema,
+  sourceListQuerySchema,
   sourceQuestionSuggestionsResponseSchema,
   signupRequestSchema,
   sourceUpdateRequestSchema,
@@ -50,6 +51,15 @@ describe('shared API schemas', () => {
     expect(publicHttpUrlSchema.safeParse('https://user:pass@example.com').success).toBe(false);
     expect(paginationQuerySchema.parse({})).toEqual({ page: 1, limit: 12 });
     expect(paginationQuerySchema.safeParse({ page: 0, limit: 51 }).success).toBe(false);
+  });
+
+  it('parses source list search query filters', () => {
+    expect(
+      sourceListQuerySchema.parse({ page: '2', q: '  Codex ', tag: ' AI ', type: 'docs' }),
+    ).toEqual({ page: 2, limit: 12, q: 'Codex', tag: 'AI', type: 'docs' });
+    expect(sourceListQuerySchema.parse({ q: '', tag: '' })).toEqual({ page: 1, limit: 12 });
+    expect(sourceListQuerySchema.safeParse({ type: 'video' }).success).toBe(false);
+    expect(sourceListQuerySchema.safeParse({ q: 'x'.repeat(101) }).success).toBe(false);
   });
 
   it('rejects an empty source patch', () => {

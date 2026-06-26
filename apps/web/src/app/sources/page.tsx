@@ -1,23 +1,40 @@
-import type { SourceListResponse } from '@sourcewiki/shared';
+import type { SourceListResponse, SourceType } from '@sourcewiki/shared';
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 
 import { SourceList } from '@/features/sources/source-list';
-import { sourceKeys } from '@/features/sources/source-api';
+import { sourceKeys, sourceListPath } from '@/features/sources/source-api';
 import { serverApiFetch } from '@/lib/api/server-api';
 
 export const dynamic = 'force-dynamic';
 
+const SOURCE_TYPES = ['article', 'docs', 'paper', 'github', 'other'] as const;
+
+function parseOptionalParam(value: string | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function parseSourceType(value: string | undefined): SourceType | undefined {
+  return SOURCE_TYPES.find((type) => type === value);
+}
+
 export default async function SourcesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; tag?: string; type?: string }>;
 }) {
   const params = await searchParams;
-  const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
-  const data = await serverApiFetch<SourceListResponse>(`/api/sources?page=${page}&limit=12`);
+  const listQuery = {
+    page: Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1),
+    limit: 12,
+    q: parseOptionalParam(params.q),
+    tag: parseOptionalParam(params.tag),
+    type: parseSourceType(params.type),
+  };
+  const data = await serverApiFetch<SourceListResponse>(sourceListPath(listQuery));
   const queryClient = new QueryClient();
-  queryClient.setQueryData(sourceKeys.list(page), data);
+  queryClient.setQueryData(sourceKeys.list(listQuery), data);
   return (
     <div className="sources-page page-shell">
       <header className="page-heading">
@@ -35,7 +52,7 @@ export default async function SourcesPage({
         </Link>
       </header>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <SourceList page={page} />
+        <SourceList filters={listQuery} />
       </HydrationBoundary>
     </div>
   );

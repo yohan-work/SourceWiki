@@ -101,6 +101,27 @@ export const openApiDocument = {
             in: 'query',
             schema: { type: 'integer', minimum: 1, maximum: 50, default: 12 },
           },
+          {
+            name: 'q',
+            in: 'query',
+            description: '제목, 요약, 본문 미리보기, 도메인, 태그명에서 검색할 키워드',
+            schema: { type: 'string', minLength: 1, maxLength: 100 },
+          },
+          {
+            name: 'tag',
+            in: 'query',
+            description: '정확히 일치하는 태그명으로 필터링',
+            schema: { type: 'string', minLength: 1, maxLength: 30 },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            description: '자료 유형으로 필터링',
+            schema: {
+              type: 'string',
+              enum: ['article', 'docs', 'paper', 'github', 'other'],
+            },
+          },
         ],
         responses: { 200: response('자료 목록', 'SourceListResponse'), 422: errorResponses[422] },
       },

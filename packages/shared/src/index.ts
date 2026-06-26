@@ -150,6 +150,16 @@ export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(12),
 });
+const optionalQueryString = (max: number) =>
+  z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().min(1).max(max).optional(),
+  );
+export const sourceListQuerySchema = paginationQuerySchema.extend({
+  q: optionalQueryString(100),
+  tag: optionalQueryString(30),
+  type: sourceTypeSchema.optional(),
+});
 export const paginationSchema = z.object({
   page: z.number().int(),
   limit: z.number().int(),
@@ -308,6 +318,7 @@ export type AuthUserResponse = z.infer<typeof authUserResponseSchema>;
 export type SourceType = z.infer<typeof sourceTypeSchema>;
 export type SourceCreateRequest = z.infer<typeof sourceCreateRequestSchema>;
 export type SourceUpdateRequest = z.infer<typeof sourceUpdateRequestSchema>;
+export type SourceListQuery = z.infer<typeof sourceListQuerySchema>;
 export type SourceListItem = z.infer<typeof sourceListItemSchema>;
 export type RelatedSource = z.infer<typeof relatedSourceSchema>;
 export type SourceGraphNode = z.infer<typeof sourceGraphNodeSchema>;

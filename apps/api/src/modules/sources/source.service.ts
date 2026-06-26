@@ -1,10 +1,12 @@
 import type {
   SourceChatRequest,
   SourceCreateRequest,
+  SourceListQuery,
   SourceUpdateRequest,
 } from '@sourcewiki/shared';
 
 import { AppError } from '../../errors/app-error.js';
+import type { Prisma } from '../../generated/prisma/client.js';
 import { prisma } from '../../lib/database.js';
 import { chatWithText, summarizeText, suggestQuestionsForText } from './source-summarizer.js';
 
@@ -24,6 +26,10 @@ function normalizeTags(tags: string[]) {
     if (!unique.has(normalized)) unique.set(normalized, display);
   }
   return [...unique].map(([normalizedName, name]) => ({ name, normalizedName }));
+}
+
+function normalizeTagName(name: string) {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
 }
 
 function preview(value: string | null | undefined, length = 300) {
@@ -93,15 +99,45 @@ async function relatedSources(source: {
     .slice(0, 5);
 }
 
-export async function listSources(page: number, limit: number) {
+function sourceListWhere(
+  input: Pick<SourceListQuery, 'q' | 'tag' | 'type'>,
+): Prisma.SourceWhereInput {
+  const filters: Prisma.SourceWhereInput[] = [];
+  if (input.type) filters.push({ sourceType: input.type });
+  if (input.tag) {
+    filters.push({
+      sourceTags: {
+        some: { tag: { normalizedName: normalizeTagName(input.tag) } },
+      },
+    });
+  }
+  if (input.q) {
+    const query = input.q;
+    filters.push({
+      OR: [
+        { title: { contains: query, mode: 'insensitive' } },
+        { summary: { contains: query, mode: 'insensitive' } },
+        { rawTextPreview: { contains: query, mode: 'insensitive' } },
+        { sourceDomain: { contains: query, mode: 'insensitive' } },
+        { sourceTags: { some: { tag: { name: { contains: query, mode: 'insensitive' } } } } },
+      ],
+    });
+  }
+  return filters.length ? { AND: filters } : {};
+}
+
+export async function listSources(input: SourceListQuery) {
+  const { page, limit } = input;
+  const where = sourceListWhere(input);
   const [sources, totalItems] = await prisma.$transaction([
     prisma.source.findMany({
+      where,
       skip: (page - 1) * limit,
       take: limit,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: sourceInclude,
     }),
-    prisma.source.count(),
+    prisma.source.count({ where }),
   ]);
   return {
     data: sources.map(listDto),
