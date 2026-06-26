@@ -1,4 +1,4 @@
-import type { SourceListResponse, SourceType } from '@sourcewiki/shared';
+import type { AuthUserResponse, SourceListResponse, SourceType } from '@sourcewiki/shared';
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 
@@ -32,9 +32,16 @@ export default async function SourcesPage({
     tag: parseOptionalParam(params.tag),
     type: parseSourceType(params.type),
   };
-  const data = await serverApiFetch<SourceListResponse>(sourceListPath(listQuery));
+  const [data, me] = await Promise.all([
+    serverApiFetch<SourceListResponse>(sourceListPath(listQuery)),
+    serverApiFetch<AuthUserResponse>('/api/auth/me').catch((error) => {
+      if ((error as { status?: number }).status === 401) return null;
+      throw error;
+    }),
+  ]);
   const queryClient = new QueryClient();
   queryClient.setQueryData(sourceKeys.list(listQuery), data);
+  queryClient.setQueryData(['auth', 'me'], me?.data ?? null);
   return (
     <div className="sources-page page-shell">
       <header className="page-heading">
