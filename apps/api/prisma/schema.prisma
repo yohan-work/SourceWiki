@@ -20,6 +20,7 @@ model User {
   refreshSessions    RefreshSession[]
   sources            Source[]
   comments           Comment[]
+  sourceLikes        SourceLike[]
 
   @@map("users")
 }
@@ -71,10 +72,24 @@ model Source {
   user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   comments         Comment[]
   sourceTags       SourceTag[]
+  sourceLikes      SourceLike[]
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId])
   @@map("sources")
+}
+
+model SourceLike {
+  userId    String   @map("user_id") @db.Uuid
+  sourceId  String   @map("source_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([userId, sourceId])
+  @@index([sourceId])
+  @@index([userId, createdAt])
+  @@map("source_likes")
 }
 
 model Comment {

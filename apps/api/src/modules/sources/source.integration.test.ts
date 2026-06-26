@@ -110,6 +110,38 @@ describe('source and comment integration', () => {
     expect(await prisma.comment.count({ where: { id: comment.id } })).toBe(0);
   });
 
+  it('toggles source likes and reflects viewer state', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '좋아요 대상 자료',
+      originalUrl: 'https://example.test/like-target',
+      sourceType: 'article',
+      tags: ['Like'],
+    });
+    sourceIds.push(source.id);
+
+    const liked = await sources.likeSource(source.id, otherId);
+    const likedAgain = await sources.likeSource(source.id, otherId);
+    const ownerView = await sources.getSource(source.id, ownerId);
+    const otherView = await sources.getSource(source.id, otherId);
+    const publicList = await sources.listSources({ page: 1, limit: 10, q: '좋아요 대상' });
+    const otherList = await sources.listSources({ page: 1, limit: 10, q: '좋아요 대상' }, otherId);
+
+    expect(liked).toMatchObject({ sourceId: source.id, likeCount: 1, likedByMe: true });
+    expect(likedAgain.likeCount).toBe(1);
+    expect(ownerView).toMatchObject({ likeCount: 1, likedByMe: false });
+    expect(otherView).toMatchObject({ likeCount: 1, likedByMe: true });
+    expect(publicList.data[0]).toMatchObject({ likeCount: 1, likedByMe: false });
+    expect(otherList.data[0]).toMatchObject({ likeCount: 1, likedByMe: true });
+
+    const unliked = await sources.unlikeSource(source.id, otherId);
+    expect(unliked).toMatchObject({ sourceId: source.id, likeCount: 0, likedByMe: false });
+
+    await sources.likeSource(source.id, otherId);
+    await sources.deleteSource(source.id, ownerId);
+    sourceIds.splice(sourceIds.indexOf(source.id), 1);
+    expect(await prisma.sourceLike.count({ where: { sourceId: source.id } })).toBe(0);
+  });
+
   it('returns related sources by shared tags', async () => {
     const target = await sources.createSource(ownerId, {
       title: 'OpenAI Codex 도입 기록',

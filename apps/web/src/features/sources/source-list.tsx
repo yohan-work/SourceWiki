@@ -1,12 +1,13 @@
 'use client';
 
 import type { SourceListItem, SourceType } from '@sourcewiki/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 
+import { useMeQuery } from '@/features/auth/use-me-query';
 import { sourceApi, sourceKeys, type SourceListOptions } from './source-api';
 
 const SOURCE_TYPE_OPTIONS: { value: '' | SourceType; label: string }[] = [
@@ -112,7 +113,38 @@ function SourceVisual({ source }: { source: Pick<SourceListItem, 'sourceDomain' 
   );
 }
 
-function SourceCard({ source }: { source: SourceListItem }) {
+function SourceLikeControl({ source, canLike }: { source: SourceListItem; canLike: boolean }) {
+  const queryClient = useQueryClient();
+  const toggle = useMutation({
+    mutationFn: () => (source.likedByMe ? sourceApi.unlike(source.id) : sourceApi.like(source.id)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: sourceKeys.lists });
+      await queryClient.invalidateQueries({ queryKey: sourceKeys.detail(source.id) });
+    },
+  });
+
+  if (!canLike)
+    return (
+      <span className="like-count" aria-label={`좋아요 ${source.likeCount}개`}>
+        ♥ {source.likeCount}
+      </span>
+    );
+
+  return (
+    <button
+      className={`like-button${source.likedByMe ? ' is-active' : ''}`}
+      type="button"
+      aria-pressed={source.likedByMe}
+      onClick={() => toggle.mutate()}
+      disabled={toggle.isPending}
+    >
+      <span aria-hidden="true">♥</span>
+      {source.likeCount}
+    </button>
+  );
+}
+
+function SourceCard({ source, canLike }: { source: SourceListItem; canLike: boolean }) {
   const excerpt = source.summaryPreview ?? source.rawTextPreview ?? '아직 작성된 요약이 없습니다.';
   return (
     <article className="source-card">
@@ -136,6 +168,7 @@ function SourceCard({ source }: { source: SourceListItem }) {
               new Date(source.createdAt),
             )}
           </time>
+          <SourceLikeControl source={source} canLike={canLike} />
         </footer>
       </div>
       <Link className="source-card__visual-link" href={`/sources/${source.id}`} tabIndex={-1}>
@@ -146,6 +179,7 @@ function SourceCard({ source }: { source: SourceListItem }) {
 }
 
 export function SourceList({ filters }: { filters: SourceListOptions }) {
+  const { data: me } = useMeQuery();
   const { data } = useQuery({
     queryKey: sourceKeys.list(filters),
     queryFn: () => sourceApi.list(filters),
@@ -186,7 +220,7 @@ export function SourceList({ filters }: { filters: SourceListOptions }) {
       <SourceSearchForm key={filterKey} filters={filters} totalItems={totalItems} />
       <div className="source-grid">
         {data.data.map((source) => (
-          <SourceCard key={source.id} source={source} />
+          <SourceCard key={source.id} source={source} canLike={Boolean(me)} />
         ))}
       </div>
       <nav className="pagination" aria-label="자료 페이지">

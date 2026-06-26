@@ -130,6 +130,15 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
       router.push('/sources');
     },
   });
+  const toggleLike = useMutation({
+    mutationFn: () => (source?.likedByMe ? sourceApi.unlike(id) : sourceApi.like(id)),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: sourceKeys.detail(id) }),
+        queryClient.invalidateQueries({ queryKey: sourceKeys.lists }),
+      ]);
+    },
+  });
   const summarize = useMutation({
     mutationFn: () => sourceApi.summarize(id),
     onSuccess: (response) => {
@@ -279,6 +288,20 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
           >
             원문 방문 ↗
           </a>
+          {canComment ? (
+            <button
+              className={`like-button like-button--detail${source.likedByMe ? ' is-active' : ''}`}
+              type="button"
+              aria-pressed={source.likedByMe}
+              onClick={() => toggleLike.mutate()}
+              disabled={toggleLike.isPending}
+            >
+              <span aria-hidden="true">♥</span>
+              좋아요 {source.likeCount}
+            </button>
+          ) : (
+            <span className="like-count like-count--detail">♥ {source.likeCount}</span>
+          )}
           {owner ? (
             <>
               <Link className="button button--text" href={`/sources/${id}/edit`}>

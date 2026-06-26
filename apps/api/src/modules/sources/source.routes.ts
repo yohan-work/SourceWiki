@@ -22,9 +22,9 @@ const aiSuggestionsLimit = createRateLimit(20);
 export function createSourceRouter() {
   const router = Router();
 
-  router.get('/', validateQuery(sourceListQuerySchema), async (_req, res) => {
+  router.get('/', optionalAuthenticate, validateQuery(sourceListQuerySchema), async (_req, res) => {
     const query = res.locals.validatedQuery as SourceListQuery;
-    const result = await sources.listSources(query);
+    const result = await sources.listSources(query, res.locals.auth?.userId);
     res.json({ ...result, meta: { requestId: res.locals.requestId } });
   });
   router.get('/graph', async (_req, res) => {
@@ -51,6 +51,14 @@ export function createSourceRouter() {
       res.status(201).json({ data, meta: { requestId: res.locals.requestId } });
     },
   );
+  router.post('/:id/like', authenticate, requireVerifiedUser, async (req, res) => {
+    const data = await sources.likeSource(String(req.params.id), res.locals.auth.userId);
+    res.json({ data, meta: { requestId: res.locals.requestId } });
+  });
+  router.delete('/:id/like', authenticate, requireVerifiedUser, async (req, res) => {
+    const data = await sources.unlikeSource(String(req.params.id), res.locals.auth.userId);
+    res.json({ data, meta: { requestId: res.locals.requestId } });
+  });
   router.get('/:id', optionalAuthenticate, async (req, res) => {
     const data = await sources.getSource(String(req.params.id), res.locals.auth?.userId);
     res.json({ data, meta: { requestId: res.locals.requestId } });

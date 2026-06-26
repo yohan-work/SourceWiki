@@ -10,13 +10,22 @@ import type { Prisma } from '../../generated/prisma/client.js';
 import { prisma } from '../../lib/database.js';
 import { chatWithText, summarizeText, suggestQuestionsForText } from './source-summarizer.js';
 
-const sourceInclude = {
-  user: { select: { id: true, nickname: true } },
-  sourceTags: { include: { tag: { select: { id: true, name: true } } } },
-  _count: { select: { comments: true } },
-} as const;
 const GRAPH_NODE_LIMIT = 80;
 const GRAPH_EDGES_PER_NODE_LIMIT = 6;
+const EMPTY_VIEWER_ID = '00000000-0000-0000-0000-000000000000';
+
+function sourceInclude(viewerId?: string) {
+  return {
+    user: { select: { id: true, nickname: true } },
+    sourceTags: { include: { tag: { select: { id: true, name: true } } } },
+    sourceLikes: {
+      where: { userId: viewerId ?? EMPTY_VIEWER_ID },
+      select: { userId: true },
+      take: 1,
+    },
+    _count: { select: { comments: true, sourceLikes: true } },
+  } as const;
+}
 
 function normalizeTags(tags: string[]) {
   const unique = new Map<string, string>();
@@ -49,7 +58,8 @@ function listDto(source: {
   updatedAt: Date;
   user: { id: string; nickname: string };
   sourceTags: { tag: { id: string; name: string } }[];
-  _count: { comments: number };
+  sourceLikes: { userId: string }[];
+  _count: { comments: number; sourceLikes: number };
 }) {
   return {
     id: source.id,
@@ -62,15 +72,20 @@ function listDto(source: {
     tags: source.sourceTags.map(({ tag }) => tag),
     author: source.user,
     commentCount: source._count.comments,
+    likeCount: source._count.sourceLikes,
+    likedByMe: source.sourceLikes.length > 0,
     createdAt: source.createdAt.toISOString(),
     updatedAt: source.updatedAt.toISOString(),
   };
 }
 
-async function relatedSources(source: {
-  id: string;
-  sourceTags: { tag: { id: string; name: string } }[];
-}) {
+async function relatedSources(
+  source: {
+    id: string;
+    sourceTags: { tag: { id: string; name: string } }[];
+  },
+  viewerId?: string,
+) {
   const tagIds = source.sourceTags.map(({ tag }) => tag.id);
   if (!tagIds.length) return [];
   const candidates = await prisma.source.findMany({
@@ -80,7 +95,7 @@ async function relatedSources(source: {
     },
     take: 20,
     orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-    include: sourceInclude,
+    include: sourceInclude(viewerId),
   });
   const sourceTagIds = new Set(tagIds);
   return candidates
@@ -126,7 +141,7 @@ function sourceListWhere(
   return filters.length ? { AND: filters } : {};
 }
 
-export async function listSources(input: SourceListQuery) {
+export async function listSources(input: SourceListQuery, viewerId?: string) {
   const { page, limit } = input;
   const where = sourceListWhere(input);
   const [sources, totalItems] = await prisma.$transaction([
@@ -135,7 +150,7 @@ export async function listSources(input: SourceListQuery) {
       skip: (page - 1) * limit,
       take: limit,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      include: sourceInclude,
+      include: sourceInclude(viewerId),
     }),
     prisma.source.count({ where }),
   ]);
@@ -231,7 +246,10 @@ export async function getSourceGraph() {
 }
 
 export async function getSource(id: string, viewerId?: string) {
-  const source = await prisma.source.findUnique({ where: { id }, include: sourceInclude });
+  const source = await prisma.source.findUnique({
+    where: { id },
+    include: sourceInclude(viewerId),
+  });
   if (!source) throw new AppError(404, 'SOURCE_NOT_FOUND', '자료를 찾을 수 없습니다.');
   return {
     ...listDto(source),
@@ -243,7 +261,7 @@ export async function getSource(id: string, viewerId?: string) {
     extractionStatus: source.extractionStatus,
     summaryStatus: source.summaryStatus,
     isOwner: source.userId === viewerId,
-    relatedSources: await relatedSources(source),
+    relatedSources: await relatedSources(source, viewerId),
   };
 }
 
@@ -277,7 +295,7 @@ export async function createSource(userId: string, input: SourceCreateRequest) {
       extractionStatus: input.rawText ? 'succeeded' : 'not_requested',
       sourceTags: { create: tags.map(({ id }) => ({ tagId: id })) },
     },
-    include: sourceInclude,
+    include: sourceInclude(userId),
   });
   return getSource(source.id, userId);
 }
@@ -329,6 +347,35 @@ export async function deleteSource(id: string, userId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.source.delete({ where: { id, userId } });
   });
+}
+
+async function getSourceLikeState(sourceId: string, userId: string) {
+  const [likeCount, likedByMe] = await prisma.$transaction([
+    prisma.sourceLike.count({ where: { sourceId } }),
+    prisma.sourceLike.count({ where: { sourceId, userId } }),
+  ]);
+  return { sourceId, likeCount, likedByMe: likedByMe > 0 };
+}
+
+async function assertSourceExists(id: string) {
+  const source = await prisma.source.findUnique({ where: { id }, select: { id: true } });
+  if (!source) throw new AppError(404, 'SOURCE_NOT_FOUND', '자료를 찾을 수 없습니다.');
+}
+
+export async function likeSource(id: string, userId: string) {
+  await assertSourceExists(id);
+  await prisma.sourceLike.upsert({
+    where: { userId_sourceId: { userId, sourceId: id } },
+    update: {},
+    create: { userId, sourceId: id },
+  });
+  return getSourceLikeState(id, userId);
+}
+
+export async function unlikeSource(id: string, userId: string) {
+  await assertSourceExists(id);
+  await prisma.sourceLike.deleteMany({ where: { sourceId: id, userId } });
+  return getSourceLikeState(id, userId);
 }
 
 export async function summarizeSource(id: string, userId: string) {

@@ -7,6 +7,7 @@ import {
   paginationQuerySchema,
   publicHttpUrlSchema,
   sourceChatResponseSchema,
+  sourceLikeResponseSchema,
   sourceListQuerySchema,
   sourceQuestionSuggestionsResponseSchema,
   signupRequestSchema,
@@ -80,6 +81,19 @@ describe('shared API schemas', () => {
     expect(
       sourceQuestionSuggestionsResponseSchema.safeParse({
         data: { questions: ['핵심 주장은 무엇인가요?'], mode: 'demo' },
+        meta: { requestId: 'request-1' },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts a source like response', () => {
+    expect(
+      sourceLikeResponseSchema.safeParse({
+        data: {
+          sourceId: '550e8400-e29b-41d4-a716-446655440000',
+          likeCount: 3,
+          likedByMe: true,
+        },
         meta: { requestId: 'request-1' },
       }).success,
     ).toBe(true);

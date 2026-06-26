@@ -238,6 +238,8 @@ export const sourceListItemSchema = z.object({
   tags: z.array(tagSchema),
   author: authorSchema,
   commentCount: z.number().int(),
+  likeCount: z.number().int(),
+  likedByMe: z.boolean(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -286,6 +288,14 @@ export const sourceDetailResponseSchema = z.object({
   data: sourceDetailSchema,
   meta: apiMetaSchema,
 });
+export const sourceLikeResponseSchema = z.object({
+  data: z.object({
+    sourceId: z.uuid(),
+    likeCount: z.number().int(),
+    likedByMe: z.boolean(),
+  }),
+  meta: apiMetaSchema,
+});
 
 export const commentRequestSchema = z.object({
   content: z.string().trim().min(1, '댓글을 입력해 주세요.').max(2000),
@@ -327,6 +337,7 @@ export type SourceGraphResponse = z.infer<typeof sourceGraphResponseSchema>;
 export type SourceDetail = z.infer<typeof sourceDetailSchema>;
 export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
+export type SourceLikeResponse = z.infer<typeof sourceLikeResponseSchema>;
 export type ExtractUrlRequest = z.infer<typeof extractUrlRequestSchema>;
 export type ExtractUrlResponse = z.infer<typeof extractUrlResponseSchema>;
 export type SummarizeSourceResponse = z.infer<typeof summarizeSourceResponseSchema>;

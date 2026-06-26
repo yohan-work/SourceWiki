@@ -9,6 +9,7 @@ import type {
   SourceChatResponse,
   SourceDetailResponse,
   SourceGraphResponse,
+  SourceLikeResponse,
   SourceListQuery,
   SourceListResponse,
   SourceQuestionSuggestionsResponse,
@@ -51,6 +52,9 @@ export const sourceApi = {
       body: JSON.stringify(input),
     }),
   remove: (id: string) => apiFetch<void>(`/api/sources/${id}`, { method: 'DELETE' }),
+  like: (id: string) => apiFetch<SourceLikeResponse>(`/api/sources/${id}/like`, { method: 'POST' }),
+  unlike: (id: string) =>
+    apiFetch<SourceLikeResponse>(`/api/sources/${id}/like`, { method: 'DELETE' }),
   summarize: (id: string) =>
     apiFetch<SummarizeSourceResponse>(
       `/ai-proxy/sources/${id}/summarize`,

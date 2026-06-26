@@ -12,6 +12,7 @@ import {
   sourceCreateRequestSchema,
   sourceDetailResponseSchema,
   sourceGraphResponseSchema,
+  sourceLikeResponseSchema,
   sourceListResponseSchema,
   sourceUpdateRequestSchema,
 } from '@sourcewiki/shared';
@@ -51,6 +52,7 @@ export const openApiDocument = {
       SourceListResponse: schema(sourceListResponseSchema),
       SourceDetailResponse: schema(sourceDetailResponseSchema),
       SourceGraphResponse: schema(sourceGraphResponseSchema),
+      SourceLikeResponse: schema(sourceLikeResponseSchema),
       CommentRequest: schema(commentRequestSchema),
       CommentResponse: schema(commentResponseSchema),
       CommentListResponse: schema(commentListResponseSchema),
@@ -179,6 +181,23 @@ export const openApiDocument = {
           503: response('AI 비활성 또는 사용 불가', 'ApiError'),
           504: response('AI 요청 시간 초과', 'ApiError'),
         },
+      },
+    },
+    '/sources/{id}/like': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      post: {
+        tags: ['Sources'],
+        summary: '자료 좋아요 추가',
+        security: [{ accessCookie: [] }],
+        responses: { 200: response('좋아요 상태', 'SourceLikeResponse'), ...errorResponses },
+      },
+      delete: {
+        tags: ['Sources'],
+        summary: '자료 좋아요 취소',
+        security: [{ accessCookie: [] }],
+        responses: { 200: response('좋아요 상태', 'SourceLikeResponse'), ...errorResponses },
       },
     },
     '/sources/{id}/chat': {
