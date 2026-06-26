@@ -41,19 +41,19 @@ export const sourceApi = {
   remove: (id: string) => apiFetch<void>(`/api/sources/${id}`, { method: 'DELETE' }),
   summarize: (id: string) =>
     apiFetch<SummarizeSourceResponse>(
-      `/api/sources/${id}/summarize`,
+      `/ai-proxy/sources/${id}/summarize`,
       { method: 'POST' },
       { timeoutMs: SUMMARY_TIMEOUT_MS },
     ),
   chat: (id: string, input: SourceChatRequest) =>
     apiFetch<SourceChatResponse>(
-      `/api/sources/${id}/chat`,
+      `/ai-proxy/sources/${id}/chat`,
       { method: 'POST', body: JSON.stringify(input) },
       { timeoutMs: SUMMARY_TIMEOUT_MS },
     ),
   suggestQuestions: (id: string) =>
     apiFetch<SourceQuestionSuggestionsResponse>(
-      `/api/sources/${id}/ai/suggestions`,
+      `/ai-proxy/sources/${id}/suggestions`,
       { method: 'POST' },
       { timeoutMs: SUMMARY_TIMEOUT_MS },
     ),
