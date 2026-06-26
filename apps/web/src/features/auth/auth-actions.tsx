@@ -27,7 +27,9 @@ export function AuthActions() {
   }
   return (
     <div className="auth-actions">
-      <span className="auth-nickname">{user.nickname}</span>
+      <Link className="auth-nickname" href="/profile">
+        {user.nickname}
+      </Link>
       <button
         className="nav-link-button"
         disabled={loggingOut}

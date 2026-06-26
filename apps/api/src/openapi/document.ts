@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   apiErrorResponseSchema,
+  authUserResponseSchema,
   commentListResponseSchema,
   commentRequestSchema,
   commentResponseSchema,
@@ -15,6 +16,8 @@ import {
   sourceLikeResponseSchema,
   sourceListResponseSchema,
   sourceUpdateRequestSchema,
+  updateProfileRequestSchema,
+  userProfileResponseSchema,
 } from '@sourcewiki/shared';
 
 const schema = (value: z.ZodType) => z.toJSONSchema(value, { target: 'draft-2020-12' });
@@ -47,12 +50,15 @@ export const openApiDocument = {
     },
     schemas: {
       ApiError: schema(apiErrorResponseSchema),
+      AuthUserResponse: schema(authUserResponseSchema),
       SourceCreate: schema(sourceCreateRequestSchema),
       SourceUpdate: schema(sourceUpdateRequestSchema),
+      UpdateProfile: schema(updateProfileRequestSchema),
       SourceListResponse: schema(sourceListResponseSchema),
       SourceDetailResponse: schema(sourceDetailResponseSchema),
       SourceGraphResponse: schema(sourceGraphResponseSchema),
       SourceLikeResponse: schema(sourceLikeResponseSchema),
+      UserProfileResponse: schema(userProfileResponseSchema),
       CommentRequest: schema(commentRequestSchema),
       CommentResponse: schema(commentResponseSchema),
       CommentListResponse: schema(commentListResponseSchema),
@@ -252,6 +258,49 @@ export const openApiDocument = {
         security: [{ accessCookie: [] }],
         requestBody: { required: true, ...json('CommentRequest') },
         responses: { 201: response('생성된 댓글', 'CommentResponse'), ...errorResponses },
+      },
+    },
+    '/users/{id}': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      get: {
+        tags: ['Users'],
+        summary: '공개 사용자 프로필 조회',
+        responses: {
+          200: response('사용자 프로필', 'UserProfileResponse'),
+          404: errorResponses[404],
+        },
+      },
+    },
+    '/users/{id}/sources': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      get: {
+        tags: ['Users'],
+        summary: '사용자가 작성한 자료 목록 조회',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50, default: 12 },
+          },
+        ],
+        responses: {
+          200: response('사용자 자료 목록', 'SourceListResponse'),
+          404: errorResponses[404],
+        },
+      },
+    },
+    '/users/me': {
+      patch: {
+        tags: ['Users'],
+        summary: '내 프로필 수정',
+        security: [{ accessCookie: [] }],
+        requestBody: { required: true, ...json('UpdateProfile') },
+        responses: { 200: response('수정된 사용자', 'AuthUserResponse'), ...errorResponses },
       },
     },
     '/comments/{id}': {

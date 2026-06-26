@@ -11,6 +11,8 @@ import {
   sourceListQuerySchema,
   sourceQuestionSuggestionsResponseSchema,
   signupRequestSchema,
+  updateProfileRequestSchema,
+  userProfileResponseSchema,
   sourceUpdateRequestSchema,
 } from './index.js';
 
@@ -44,6 +46,28 @@ describe('shared API schemas', () => {
       password: 'password123',
     });
     expect(result.email).toBe('user@example.com');
+  });
+
+  it('validates profile update and public profile responses', () => {
+    expect(updateProfileRequestSchema.parse({ nickname: ' 새이름 ', bio: ' 소개 ' })).toEqual({
+      nickname: '새이름',
+      bio: '소개',
+    });
+    expect(updateProfileRequestSchema.safeParse({}).success).toBe(false);
+    expect(updateProfileRequestSchema.safeParse({ bio: 'x'.repeat(501) }).success).toBe(false);
+    expect(
+      userProfileResponseSchema.safeParse({
+        data: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          nickname: '작성자',
+          bio: null,
+          createdAt: '2026-06-19T12:00:00.000Z',
+          updatedAt: '2026-06-19T12:00:00.000Z',
+          stats: { sourceCount: 2, commentCount: 3, receivedLikeCount: 4 },
+        },
+        meta: { requestId: 'request-1' },
+      }).success,
+    ).toBe(true);
   });
 
   it('validates public source URLs and pagination boundaries', () => {

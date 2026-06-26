@@ -16,6 +16,7 @@ type AuthUserRecord = {
   id: string;
   email: string;
   nickname: string;
+  bio: string | null;
   emailVerifiedAt: Date | null;
   createdAt: Date;
 };
@@ -25,6 +26,7 @@ export function toAuthUser(user: AuthUserRecord) {
     id: user.id,
     email: user.email,
     nickname: user.nickname,
+    bio: user.bio,
     emailVerified: user.emailVerifiedAt !== null,
     createdAt: user.createdAt.toISOString(),
   };
@@ -76,7 +78,14 @@ export async function signup(
   try {
     user = await prisma.user.create({
       data: { email: input.email, nickname: input.nickname, passwordHash },
-      select: { id: true, email: true, nickname: true, emailVerifiedAt: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        bio: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+      },
     });
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
@@ -216,7 +225,14 @@ export async function logout(rawToken?: string): Promise<void> {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, nickname: true, emailVerifiedAt: true, createdAt: true },
+    select: {
+      id: true,
+      email: true,
+      nickname: true,
+      bio: true,
+      emailVerifiedAt: true,
+      createdAt: true,
+    },
   });
   if (!user) throw new AppError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
   return toAuthUser(user);

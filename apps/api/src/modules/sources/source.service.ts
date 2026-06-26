@@ -115,9 +115,10 @@ async function relatedSources(
 }
 
 function sourceListWhere(
-  input: Pick<SourceListQuery, 'q' | 'tag' | 'type'>,
+  input: Pick<SourceListQuery, 'q' | 'tag' | 'type'> & { userId?: string },
 ): Prisma.SourceWhereInput {
   const filters: Prisma.SourceWhereInput[] = [];
+  if (input.userId) filters.push({ userId: input.userId });
   if (input.type) filters.push({ sourceType: input.type });
   if (input.tag) {
     filters.push({
@@ -144,6 +145,27 @@ function sourceListWhere(
 export async function listSources(input: SourceListQuery, viewerId?: string) {
   const { page, limit } = input;
   const where = sourceListWhere(input);
+  const [sources, totalItems] = await prisma.$transaction([
+    prisma.source.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      include: sourceInclude(viewerId),
+    }),
+    prisma.source.count({ where }),
+  ]);
+  return {
+    data: sources.map(listDto),
+    pagination: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) },
+  };
+}
+
+export async function listUserSources(userId: string, input: SourceListQuery, viewerId?: string) {
+  const exists = await prisma.user.count({ where: { id: userId } });
+  if (!exists) throw new AppError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+  const { page, limit } = input;
+  const where = sourceListWhere({ ...input, userId });
   const [sources, totalItems] = await prisma.$transaction([
     prisma.source.findMany({
       where,

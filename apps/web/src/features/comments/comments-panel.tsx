@@ -2,6 +2,7 @@
 
 import { commentRequestSchema, type SourceComment } from '@sourcewiki/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useState } from 'react';
 
 import { ApiError } from '@/lib/api/api-client';
@@ -33,7 +34,9 @@ function CommentItem({ comment, sourceId }: { comment: SourceComment; sourceId: 
   return (
     <article className="comment-item">
       <header>
-        <strong>{comment.author.nickname}</strong>
+        <strong>
+          <Link href={`/users/${comment.author.id}`}>{comment.author.nickname}</Link>
+        </strong>
         <span>
           {new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(
             new Date(comment.createdAt),

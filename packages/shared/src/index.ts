@@ -44,6 +44,7 @@ export const nicknameSchema = z
   .trim()
   .min(2, '닉네임은 2자 이상이어야 합니다.')
   .max(30, '닉네임은 30자 이하여야 합니다.');
+export const bioSchema = z.string().trim().max(500, '소개는 500자 이하여야 합니다.');
 
 export const checkEmailRequestSchema = z.object({ email: emailSchema });
 export const signupRequestSchema = z.object({
@@ -59,6 +60,7 @@ export const authUserSchema = z.object({
   id: z.uuid(),
   email: z.email(),
   nickname: z.string(),
+  bio: z.string().nullable(),
   emailVerified: z.boolean(),
   createdAt: z.iso.datetime(),
 });
@@ -72,6 +74,15 @@ export const authMessageResponseSchema = z.object({
   data: z.object({ message: z.string() }),
   meta: apiMetaSchema,
 });
+export const updateProfileRequestSchema = z
+  .object({
+    nickname: nicknameSchema.optional(),
+    bio: bioSchema.nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: '수정할 값을 한 개 이상 입력해 주세요.',
+    path: ['form'],
+  });
 
 export const sourceTypeSchema = z.enum(['article', 'docs', 'paper', 'github', 'other']);
 export const extractionStatusSchema = z.enum(['not_requested', 'succeeded', 'failed']);
@@ -296,6 +307,22 @@ export const sourceLikeResponseSchema = z.object({
   }),
   meta: apiMetaSchema,
 });
+export const userProfileSchema = z.object({
+  id: z.uuid(),
+  nickname: z.string(),
+  bio: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  stats: z.object({
+    sourceCount: z.number().int(),
+    commentCount: z.number().int(),
+    receivedLikeCount: z.number().int(),
+  }),
+});
+export const userProfileResponseSchema = z.object({
+  data: userProfileSchema,
+  meta: apiMetaSchema,
+});
 
 export const commentRequestSchema = z.object({
   content: z.string().trim().min(1, '댓글을 입력해 주세요.').max(2000),
@@ -325,6 +352,7 @@ export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
 export type ResendVerificationRequest = z.infer<typeof resendVerificationRequestSchema>;
 export type AuthUser = z.infer<typeof authUserSchema>;
 export type AuthUserResponse = z.infer<typeof authUserResponseSchema>;
+export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
 export type SourceType = z.infer<typeof sourceTypeSchema>;
 export type SourceCreateRequest = z.infer<typeof sourceCreateRequestSchema>;
 export type SourceUpdateRequest = z.infer<typeof sourceUpdateRequestSchema>;
@@ -338,6 +366,8 @@ export type SourceDetail = z.infer<typeof sourceDetailSchema>;
 export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
 export type SourceLikeResponse = z.infer<typeof sourceLikeResponseSchema>;
+export type UserProfile = z.infer<typeof userProfileSchema>;
+export type UserProfileResponse = z.infer<typeof userProfileResponseSchema>;
 export type ExtractUrlRequest = z.infer<typeof extractUrlRequestSchema>;
 export type ExtractUrlResponse = z.infer<typeof extractUrlResponseSchema>;
 export type SummarizeSourceResponse = z.infer<typeof summarizeSourceResponseSchema>;

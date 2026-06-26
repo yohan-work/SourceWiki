@@ -151,7 +151,7 @@ function SourceCard({ source, canLike }: { source: SourceListItem; canLike: bool
       <div className="source-card__body">
         <div className="source-card__meta">
           <span>{source.sourceType}</span>
-          <span>{source.author.nickname}</span>
+          <Link href={`/users/${source.author.id}`}>{source.author.nickname}</Link>
         </div>
         <h2>
           <Link href={`/sources/${source.id}`}>{source.title}</Link>

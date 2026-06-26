@@ -267,7 +267,7 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
         </div>
         <h1>{source.title}</h1>
         <p>
-          {source.author.nickname} ·{' '}
+          <Link href={`/users/${source.author.id}`}>{source.author.nickname}</Link> ·{' '}
           {new Intl.DateTimeFormat('ko-KR', { dateStyle: 'long' }).format(
             new Date(source.createdAt),
           )}

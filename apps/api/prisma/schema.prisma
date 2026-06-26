@@ -12,6 +12,7 @@ model User {
   email           String    @unique @db.VarChar(320)
   passwordHash    String    @map("password_hash")
   nickname        String    @db.VarChar(30)
+  bio             String?   @db.VarChar(500)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
