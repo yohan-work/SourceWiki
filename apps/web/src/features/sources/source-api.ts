@@ -10,6 +10,7 @@ import type {
   SourceDetailResponse,
   SourceGraphResponse,
   SourceListResponse,
+  SourceQuestionSuggestionsResponse,
   SourceUpdateRequest,
   SummarizeSourceResponse,
 } from '@sourcewiki/shared';
@@ -48,6 +49,12 @@ export const sourceApi = {
     apiFetch<SourceChatResponse>(
       `/api/sources/${id}/chat`,
       { method: 'POST', body: JSON.stringify(input) },
+      { timeoutMs: SUMMARY_TIMEOUT_MS },
+    ),
+  suggestQuestions: (id: string) =>
+    apiFetch<SourceQuestionSuggestionsResponse>(
+      `/api/sources/${id}/ai/suggestions`,
+      { method: 'POST' },
       { timeoutMs: SUMMARY_TIMEOUT_MS },
     ),
   extractUrl: (input: ExtractUrlRequest) =>

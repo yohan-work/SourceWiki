@@ -23,6 +23,8 @@ type AssistantTab = 'summary' | 'chat';
 type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
+  citations?: { index: number; text: string }[];
+  mode?: 'ollama' | 'demo';
 };
 
 const lines = (value: string) =>
@@ -113,6 +115,14 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
     staleTime: 60_000,
   });
   const source = data?.data;
+  const isOwner = Boolean(source?.isOwner);
+  const hasSourceText = Boolean(source?.rawText);
+  const suggestions = useQuery({
+    queryKey: ['source', id, 'ai-suggestions'],
+    queryFn: () => sourceApi.suggestQuestions(id),
+    enabled: isOwner && hasSourceText && isAiPanelOpen && activeAiTab === 'chat',
+    staleTime: 10 * 60_000,
+  });
   const remove = useMutation({
     mutationFn: () => sourceApi.remove(id),
     onSuccess: async () => {
@@ -147,11 +157,20 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
     },
   });
   const chat = useMutation({
-    mutationFn: (input: { message: string; history: ChatMessage[] }) => sourceApi.chat(id, input),
+    mutationFn: (input: { message: string; history: ChatMessage[] }) =>
+      sourceApi.chat(id, {
+        message: input.message,
+        history: input.history.map(({ role, content }) => ({ role, content })),
+      }),
     onSuccess: (response) => {
       setChatMessages((current) => [
         ...current,
-        { role: 'assistant', content: response.data.answer },
+        {
+          role: 'assistant',
+          content: response.data.answer,
+          citations: response.data.citations,
+          mode: response.data.mode,
+        },
       ]);
       setChatError(null);
     },
@@ -211,15 +230,18 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
     setActiveAiTab(tab);
     setIsAiPanelOpen(true);
   };
-  const submitChat = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const message = chatInput.trim();
-    if (!message || chat.isPending || !source.rawText) return;
+  const sendChatMessage = (message: string) => {
+    const trimmed = message.trim();
+    if (!trimmed || chat.isPending || !source.rawText) return;
     const history = chatMessages.slice(-8);
-    setChatMessages((current) => [...current, { role: 'user', content: message }]);
+    setChatMessages((current) => [...current, { role: 'user', content: trimmed }]);
     setChatInput('');
     setChatError(null);
-    chat.mutate({ message, history });
+    chat.mutate({ message: trimmed, history });
+  };
+  const submitChat = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    sendChatMessage(chatInput);
   };
   const handleChatKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
@@ -317,7 +339,7 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
                   summarize.isPending || applySummary.isPending || chat.isPending || !source.rawText
                 }
               >
-                {summarize.isPending ? '생성 중' : 'AI Assistant'}
+                {summarize.isPending ? '생성 중' : 'AI 어시스턴트'}
               </button>
               {!source.rawText ? <small>정제 본문이 필요합니다.</small> : null}
             </div>
@@ -584,6 +606,33 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
                           <p>{draft.applicationIdea}</p>
                         </div>
                       ) : null}
+                      <section className="ai-draft-card ai-reading-card">
+                        <div className="ai-draft-card__header">
+                          <h3>읽기 가이드</h3>
+                        </div>
+                        <div className="ai-reading-grid">
+                          <div>
+                            <span>빠른 이해</span>
+                            <p>{visibleSummary.summary}</p>
+                          </div>
+                          <div>
+                            <span>실무 적용</span>
+                            <p>
+                              {draft?.applicationIdea ||
+                                visibleSummary.keyPoints[0] ||
+                                '핵심 포인트를 바탕으로 적용 가능성을 검토해 보세요.'}
+                            </p>
+                          </div>
+                          <div>
+                            <span>용어/개념</span>
+                            <p>
+                              {visibleSummary.keywords.length
+                                ? visibleSummary.keywords.slice(0, 6).join(', ')
+                                : '추출된 키워드가 없습니다.'}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
                     </div>
                   ) : null}
                 </>
@@ -596,6 +645,40 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
                       내용만 바탕으로 제공합니다.
                     </p>
                   </div>
+                  {!chatMessages.length ? (
+                    <section className="ai-suggestion-panel" aria-labelledby="ai-suggestions-title">
+                      <div>
+                        <strong id="ai-suggestions-title">추천 질문</strong>
+                        {suggestions.data?.data.mode === 'demo' ? (
+                          <span className="status-badge">데모</span>
+                        ) : null}
+                      </div>
+                      {suggestions.isLoading ? (
+                        <AiThinkingIndicator label="AI가 추천 질문을 생성 중입니다." />
+                      ) : suggestions.isError ? (
+                        <p>추천 질문을 불러오지 못했습니다. 직접 질문을 입력해 주세요.</p>
+                      ) : (
+                        <div className="ai-suggestion-list">
+                          {(
+                            suggestions.data?.data.questions ?? [
+                              '이 글의 핵심 주장은 무엇인가요?',
+                              '실무에 적용할 만한 점은 무엇인가요?',
+                              '주의해야 할 한계나 전제는 무엇인가요?',
+                            ]
+                          ).map((question) => (
+                            <button
+                              key={question}
+                              type="button"
+                              onClick={() => sendChatMessage(question)}
+                              disabled={chat.isPending || !source.rawText}
+                            >
+                              {question}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  ) : null}
                   {chatMessages.map((message, index) => (
                     <div
                       key={`${message.role}-${index}-${message.content.slice(0, 16)}`}
@@ -603,6 +686,20 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
                     >
                       <span>{message.role === 'user' ? '나' : 'AI'}</span>
                       <p>{message.content}</p>
+                      {message.mode === 'demo' ? (
+                        <small className="ai-chat-mode">데모 응답</small>
+                      ) : null}
+                      {message.citations?.length ? (
+                        <div className="ai-citation-list" aria-label="답변 근거 문단">
+                          <strong>원문에서 확인한 내용</strong>
+                          {message.citations.map((citation) => (
+                            <blockquote key={`${citation.index}-${citation.text.slice(0, 20)}`}>
+                              <span>문단 {citation.index}</span>
+                              <p>{citation.text}</p>
+                            </blockquote>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                   {chat.isPending ? <AiThinkingIndicator label="AI가 답변 중입니다." /> : null}
