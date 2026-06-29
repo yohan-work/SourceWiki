@@ -8,6 +8,8 @@ import type {
   SourceChatRequest,
   SourceChatResponse,
   SourceDetailResponse,
+  SourceFileListResponse,
+  SourceFileResponse,
   SourceGraphResponse,
   SourceLikeResponse,
   SourceListQuery,
@@ -38,6 +40,7 @@ export const sourceKeys = {
   list: (input: SourceListOptions) => ['sources', input] as const,
   detail: (id: string) => ['source', id] as const,
   comments: (id: string) => ['comments', id] as const,
+  files: (id: string) => ['source', id, 'files'] as const,
 };
 
 export const sourceApi = {
@@ -91,4 +94,12 @@ export const sourceApi = {
       body: JSON.stringify(input),
     }),
   removeComment: (id: string) => apiFetch<void>(`/api/comments/${id}`, { method: 'DELETE' }),
+  files: (id: string) => apiFetch<SourceFileListResponse>(`/api/sources/${id}/files`),
+  uploadFile: (id: string, file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    return apiFetch<SourceFileResponse>(`/api/sources/${id}/files`, { method: 'POST', body });
+  },
+  removeFile: (id: string) => apiFetch<void>(`/api/files/${id}`, { method: 'DELETE' }),
+  fileDownloadUrl: (id: string) => `/api/files/${id}/download`,
 };

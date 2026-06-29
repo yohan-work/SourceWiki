@@ -47,10 +47,19 @@ const tags = (value: string) =>
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_FILE_EXTENSIONS = '.pdf,.txt,.md,.png,.jpg,.jpeg,.webp';
+
+function formatBytes(value: number) {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${Math.round(value / 102.4) / 10} KB`;
+  return `${Math.round(value / 1024 / 102.4) / 10} MB`;
+}
 
 export function SourceForm({ id }: { id?: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [extractPreview, setExtractPreview] = useState<{
     domain: string;
     preview: string;
@@ -97,36 +106,44 @@ export function SourceForm({ id }: { id?: string }) {
   }, [detail, reset]);
   useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (isDirty) event.preventDefault();
+      if (isDirty || selectedFiles.length) event.preventDefault();
     };
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
-  }, [isDirty]);
+  }, [isDirty, selectedFiles.length]);
 
   const mutation = useMutation({
-    mutationFn: async (values: FormValues) =>
-      id
-        ? sourceApi.update(id, {
-            title: values.title,
-            originalUrl: values.originalUrl,
-            sourceType: values.sourceType,
-            rawText: values.rawText || null,
-            summary: values.summary || null,
-            keyPoints: lines(values.keyPointsText).slice(0, 10),
-            keywords: lines(values.keywordsText).slice(0, 20),
-            personalNote: values.personalNote || null,
-            tags: tags(values.tagsText).slice(0, 10),
-          })
-        : sourceApi.create({
-            title: values.title,
-            originalUrl: values.originalUrl,
-            sourceType: values.sourceType,
-            rawText: values.rawText || undefined,
-            personalNote: values.personalNote || undefined,
-            tags: tags(values.tagsText).slice(0, 10),
-          }),
+    mutationFn: async (values: FormValues) => {
+      if (id) {
+        return sourceApi.update(id, {
+          title: values.title,
+          originalUrl: values.originalUrl,
+          sourceType: values.sourceType,
+          rawText: values.rawText || null,
+          summary: values.summary || null,
+          keyPoints: lines(values.keyPointsText).slice(0, 10),
+          keywords: lines(values.keywordsText).slice(0, 20),
+          personalNote: values.personalNote || null,
+          tags: tags(values.tagsText).slice(0, 10),
+        });
+      }
+
+      const response = await sourceApi.create({
+        title: values.title,
+        originalUrl: values.originalUrl,
+        sourceType: values.sourceType,
+        rawText: values.rawText || undefined,
+        personalNote: values.personalNote || undefined,
+        tags: tags(values.tagsText).slice(0, 10),
+      });
+      for (const file of selectedFiles) await sourceApi.uploadFile(response.data.id, file);
+      return response;
+    },
     onSuccess: async (response) => {
-      await queryClient.invalidateQueries({ queryKey: sourceKeys.lists });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: sourceKeys.lists }),
+        queryClient.invalidateQueries({ queryKey: sourceKeys.files(response.data.id) }),
+      ]);
       router.push(`/sources/${response.data.id}`);
     },
     onError: (error) => {
@@ -178,6 +195,19 @@ export function SourceForm({ id }: { id?: string }) {
       return;
     }
     extractMutation.mutate();
+  };
+  const handleFileChange = (files: FileList | null) => {
+    const nextFiles = Array.from(files ?? []);
+    const oversized = nextFiles.find((file) => file.size > MAX_FILE_BYTES);
+    if (oversized) {
+      setError('root', {
+        message: `${oversized.name} 파일이 10MB를 초과합니다.`,
+      });
+      setSelectedFiles([]);
+      return;
+    }
+    clearErrors('root');
+    setSelectedFiles(nextFiles);
   };
 
   if (authPending || (id && detailPending))
@@ -278,12 +308,43 @@ export function SourceForm({ id }: { id?: string }) {
         <span>개인 메모</span>
         <textarea {...register('personalNote')} />
       </label>
+      {!id ? (
+        <section className="source-form-attachments" aria-labelledby="source-form-files-title">
+          <div>
+            <span id="source-form-files-title">첨부 파일</span>
+            <small>자료 저장 후 함께 업로드됩니다. 최대 10MB, pdf/txt/md/png/jpg/webp</small>
+          </div>
+          <input
+            type="file"
+            name="files"
+            multiple
+            accept={ALLOWED_FILE_EXTENSIONS}
+            onChange={(event) => handleFileChange(event.target.files)}
+          />
+          {selectedFiles.length ? (
+            <ul>
+              {selectedFiles.map((file) => (
+                <li key={`${file.name}-${file.lastModified}`}>
+                  <span>{file.name}</span>
+                  <small>{formatBytes(file.size)}</small>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
       <div className="form-footer">
         <Link className="button button--text" href={id ? `/sources/${id}` : '/sources'}>
           취소
         </Link>
         <button className="button button--primary" disabled={mutation.isPending}>
-          {mutation.isPending ? '저장 중…' : id ? '변경사항 저장' : '자료 저장'}
+          {mutation.isPending
+            ? selectedFiles.length
+              ? '저장 및 업로드 중…'
+              : '저장 중…'
+            : id
+              ? '변경사항 저장'
+              : '자료 저장'}
         </button>
       </div>
     </form>

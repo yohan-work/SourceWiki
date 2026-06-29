@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, type KeyboardEvent, useState } from 'react';
 
 import { CommentsPanel } from '@/features/comments/comments-panel';
+import { SourceFilesPanel } from '@/features/files/source-files-panel';
 import { ApiError } from '@/lib/api/api-client';
 import { sourceApi, sourceKeys } from './source-api';
 
@@ -783,6 +784,7 @@ export function SourceDetailView({ id, canComment }: { id: string; canComment: b
           </aside>
         </div>
       ) : null}
+      <SourceFilesPanel sourceId={id} canManage={owner} />
       <CommentsPanel sourceId={id} canComment={canComment} />
     </article>
   );

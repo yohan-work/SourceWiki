@@ -52,13 +52,14 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), options.timeoutMs ?? 10_000);
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   try {
     const response = await fetch(path, {
       ...init,
       credentials: 'include',
       signal: controller.signal,
       headers: {
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(init.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...init.headers,
       },
     });
