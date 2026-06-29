@@ -54,7 +54,8 @@ pnpm docker:up
 14. [Phase 3 테스트와 E2E 검증](./14-core-crud-testing-e2e.md)
 15. [URL 본문 추출과 SSRF 방어](./15-url-extraction-security.md)
 16. [URL 추출 프론트엔드 흐름과 테스트](./16-url-extraction-frontend-testing.md)
+17. [프로젝트 전체 구조와 데이터 흐름](./17-project-overview-qna.md)
 
 ## 한 문장 요약
 
-이 프로젝트는 `pnpm`으로 여러 Node 패키지를 한 저장소에서 관리하고, Docker로 인프라를 실행하며, Web과 API가 공유 schema를 기준으로 이메일 인증, 회전형 JWT session, 자료·댓글 CRUD, 안전한 URL 본문 추출을 처리합니다.
+이 프로젝트는 `pnpm`으로 여러 Node 패키지를 한 저장소에서 관리하고, Docker로 인프라를 실행하며, Web과 API가 공유 schema를 기준으로 이메일 인증, 회전형 JWT session, 자료·댓글 CRUD, 안전한 URL 본문 추출, AI 요약과 선택 기능을 처리합니다.
