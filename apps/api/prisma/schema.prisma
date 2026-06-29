@@ -22,6 +22,7 @@ model User {
   sources            Source[]
   comments           Comment[]
   sourceLikes        SourceLike[]
+  uploadedFiles      UploadedFile[]
 
   @@map("users")
 }
@@ -74,6 +75,7 @@ model Source {
   comments         Comment[]
   sourceTags       SourceTag[]
   sourceLikes      SourceLike[]
+  uploadedFiles    UploadedFile[]
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId])
@@ -91,6 +93,23 @@ model SourceLike {
   @@index([sourceId])
   @@index([userId, createdAt])
   @@map("source_likes")
+}
+
+model UploadedFile {
+  id           String   @id @default(uuid()) @db.Uuid
+  sourceId     String   @map("source_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  originalName String   @map("original_name") @db.VarChar(255)
+  storedName   String   @unique @map("stored_name") @db.VarChar(120)
+  mimeType     String   @map("mime_type") @db.VarChar(120)
+  sizeBytes    Int      @map("size_bytes")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  source       Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([sourceId, createdAt])
+  @@index([userId])
+  @@map("uploaded_files")
 }
 
 model Comment {

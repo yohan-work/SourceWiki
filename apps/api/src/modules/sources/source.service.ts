@@ -8,6 +8,7 @@ import type {
 import { AppError } from '../../errors/app-error.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import { prisma } from '../../lib/database.js';
+import { removeStoredFiles } from '../files/file.service.js';
 import { chatWithText, summarizeText, suggestQuestionsForText } from './source-summarizer.js';
 
 const GRAPH_NODE_LIMIT = 80;
@@ -366,9 +367,14 @@ export async function updateSource(id: string, userId: string, input: SourceUpda
 
 export async function deleteSource(id: string, userId: string) {
   await assertOwner(id, userId);
+  const files = await prisma.uploadedFile.findMany({
+    where: { sourceId: id },
+    select: { storedName: true },
+  });
   await prisma.$transaction(async (tx) => {
     await tx.source.delete({ where: { id, userId } });
   });
+  await removeStoredFiles(files.map((file) => file.storedName));
 }
 
 async function getSourceLikeState(sourceId: string, userId: string) {

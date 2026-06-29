@@ -13,6 +13,8 @@ import { optionalAuthenticate, requireVerifiedUser } from '../../middleware/auth
 import { createRateLimit } from '../../middleware/rate-limit.js';
 import { validateBody, validateQuery } from '../../middleware/validate.js';
 import * as comments from '../comments/comment.service.js';
+import * as files from '../files/file.service.js';
+import { parseMultipartUpload } from '../files/multipart.js';
 import * as sources from './source.service.js';
 
 const aiSummaryLimit = createRateLimit(10);
@@ -36,6 +38,20 @@ export function createSourceRouter() {
       data: await comments.listComments(String(req.params.id), res.locals.auth?.userId),
       meta: { requestId: res.locals.requestId },
     });
+  });
+  router.get('/:id/files', async (req, res) => {
+    res.json({
+      data: await files.listFiles(String(req.params.id)),
+      meta: { requestId: res.locals.requestId },
+    });
+  });
+  router.post('/:id/files', authenticate, requireVerifiedUser, async (req, res) => {
+    const data = await files.createFile(
+      String(req.params.id),
+      res.locals.auth.userId,
+      await parseMultipartUpload(req),
+    );
+    res.status(201).json({ data, meta: { requestId: res.locals.requestId } });
   });
   router.post(
     '/:id/comments',

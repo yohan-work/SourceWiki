@@ -307,6 +307,22 @@ export const sourceLikeResponseSchema = z.object({
   }),
   meta: apiMetaSchema,
 });
+export const sourceFileSchema = z.object({
+  id: z.uuid(),
+  sourceId: z.uuid(),
+  originalName: z.string(),
+  mimeType: z.string(),
+  sizeBytes: z.number().int().nonnegative(),
+  createdAt: z.iso.datetime(),
+});
+export const sourceFileResponseSchema = z.object({
+  data: sourceFileSchema,
+  meta: apiMetaSchema,
+});
+export const sourceFileListResponseSchema = z.object({
+  data: z.array(sourceFileSchema),
+  meta: apiMetaSchema,
+});
 export const userProfileSchema = z.object({
   id: z.uuid(),
   nickname: z.string(),
@@ -366,6 +382,9 @@ export type SourceDetail = z.infer<typeof sourceDetailSchema>;
 export type SourceListResponse = z.infer<typeof sourceListResponseSchema>;
 export type SourceDetailResponse = z.infer<typeof sourceDetailResponseSchema>;
 export type SourceLikeResponse = z.infer<typeof sourceLikeResponseSchema>;
+export type SourceFile = z.infer<typeof sourceFileSchema>;
+export type SourceFileResponse = z.infer<typeof sourceFileResponseSchema>;
+export type SourceFileListResponse = z.infer<typeof sourceFileListResponseSchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
 export type UserProfileResponse = z.infer<typeof userProfileResponseSchema>;
 export type ExtractUrlRequest = z.infer<typeof extractUrlRequestSchema>;

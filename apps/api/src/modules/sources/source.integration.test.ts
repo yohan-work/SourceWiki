@@ -1,17 +1,25 @@
 import { randomUUID } from 'node:crypto';
 
+import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { createApp } from '../../app.js';
 import { AppError } from '../../errors/app-error.js';
 import { prisma } from '../../lib/database.js';
+import { signAuthToken } from '../../lib/jwt.js';
 import * as comments from '../comments/comment.service.js';
 import * as sources from './source.service.js';
 
 const suffix = randomUUID();
 const emails = [`owner-${suffix}@example.test`, `other-${suffix}@example.test`];
+const app = createApp();
 let ownerId = '';
 let otherId = '';
 const sourceIds: string[] = [];
+
+async function authCookie(userId: string) {
+  return `access_token=${await signAuthToken(userId, 'access')}`;
+}
 
 beforeAll(async () => {
   const [owner, other] = await Promise.all(
@@ -140,6 +148,78 @@ describe('source and comment integration', () => {
     await sources.deleteSource(source.id, ownerId);
     sourceIds.splice(sourceIds.indexOf(source.id), 1);
     expect(await prisma.sourceLike.count({ where: { sourceId: source.id } })).toBe(0);
+  });
+
+  it('uploads, downloads, deletes, and cascades source files', async () => {
+    const source = await sources.createSource(ownerId, {
+      title: '파일 첨부 자료',
+      originalUrl: 'https://example.test/file-target',
+      sourceType: 'docs',
+      tags: ['File'],
+    });
+    sourceIds.push(source.id);
+
+    await request(app)
+      .post(`/api/sources/${source.id}/files`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', await authCookie(otherId))
+      .attach('file', Buffer.from('reader upload'), {
+        filename: 'reader.txt',
+        contentType: 'text/plain',
+      })
+      .expect(403);
+
+    const uploaded = await request(app)
+      .post(`/api/sources/${source.id}/files`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', await authCookie(ownerId))
+      .attach('file', Buffer.from('sourcewiki upload'), {
+        filename: 'notes.txt',
+        contentType: 'text/plain',
+      })
+      .expect(201);
+
+    expect(uploaded.body.data).toMatchObject({
+      sourceId: source.id,
+      originalName: 'notes.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 'sourcewiki upload'.length,
+    });
+
+    const list = await request(app).get(`/api/sources/${source.id}/files`).expect(200);
+    expect(list.body.data.map((file: { id: string }) => file.id)).toContain(uploaded.body.data.id);
+
+    const download = await request(app)
+      .get(`/api/files/${uploaded.body.data.id}/download`)
+      .expect(200);
+    expect(download.text).toBe('sourcewiki upload');
+
+    await request(app)
+      .delete(`/api/files/${uploaded.body.data.id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', await authCookie(otherId))
+      .expect(403);
+
+    await request(app)
+      .delete(`/api/files/${uploaded.body.data.id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', await authCookie(ownerId))
+      .expect(204);
+    await request(app).get(`/api/files/${uploaded.body.data.id}/download`).expect(404);
+
+    const cascade = await request(app)
+      .post(`/api/sources/${source.id}/files`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', await authCookie(ownerId))
+      .attach('file', Buffer.from('cascade'), {
+        filename: 'cascade.md',
+        contentType: 'text/plain',
+      })
+      .expect(201);
+    await sources.deleteSource(source.id, ownerId);
+    sourceIds.splice(sourceIds.indexOf(source.id), 1);
+    expect(await prisma.uploadedFile.count({ where: { id: cascade.body.data.id } })).toBe(0);
+    await request(app).get(`/api/files/${cascade.body.data.id}/download`).expect(404);
   });
 
   it('returns related sources by shared tags', async () => {

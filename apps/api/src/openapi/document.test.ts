@@ -26,6 +26,9 @@ describe('OpenAPI document', () => {
         '/sources/{id}/chat',
         '/sources/{id}/ai/suggestions',
         '/sources/{id}/comments',
+        '/sources/{id}/files',
+        '/files/{id}/download',
+        '/files/{id}',
         '/comments/{id}',
       ]),
     );

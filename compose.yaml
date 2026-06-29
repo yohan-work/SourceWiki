@@ -47,7 +47,10 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_FROM: ${SMTP_FROM:-noreply@sourcewiki.local}
+      UPLOAD_DIR: /data/uploads
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    volumes:
+      - uploads_data:/data/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -102,5 +105,6 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
   caddy_data:
   caddy_config:

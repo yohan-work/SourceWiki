@@ -17,6 +17,8 @@ import {
   summarizeSourceResponseSchema,
   sourceCreateRequestSchema,
   sourceDetailResponseSchema,
+  sourceFileListResponseSchema,
+  sourceFileResponseSchema,
   sourceGraphResponseSchema,
   sourceLikeResponseSchema,
   sourceListResponseSchema,
@@ -70,6 +72,8 @@ export const openApiDocument = {
       UpdateProfile: schema(updateProfileRequestSchema),
       SourceListResponse: schema(sourceListResponseSchema),
       SourceDetailResponse: schema(sourceDetailResponseSchema),
+      SourceFileResponse: schema(sourceFileResponseSchema),
+      SourceFileListResponse: schema(sourceFileListResponseSchema),
       SourceGraphResponse: schema(sourceGraphResponseSchema),
       SourceLikeResponse: schema(sourceLikeResponseSchema),
       UserProfileResponse: schema(userProfileResponseSchema),
@@ -94,6 +98,17 @@ export const openApiDocument = {
       SourceChatRequest: schema(sourceChatRequestSchema),
       SourceChatResponse: schema(sourceChatResponseSchema),
       SourceQuestionSuggestionsResponse: schema(sourceQuestionSuggestionsResponseSchema),
+      SourceFileUploadRequest: {
+        type: 'object',
+        required: ['file'],
+        properties: {
+          file: {
+            type: 'string',
+            format: 'binary',
+            description: '10MB 이하의 pdf, txt, md, png, jpg, webp 파일',
+          },
+        },
+      },
     },
   },
   paths: {
@@ -372,6 +387,63 @@ export const openApiDocument = {
         security: [{ accessCookie: [] }],
         requestBody: { required: true, ...json('CommentRequest') },
         responses: { 201: response('생성된 댓글', 'CommentResponse'), ...errorResponses },
+      },
+    },
+    '/sources/{id}/files': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      get: {
+        tags: ['Files'],
+        summary: '자료 첨부 파일 목록 조회',
+        responses: {
+          200: response('첨부 파일 목록', 'SourceFileListResponse'),
+          404: errorResponses[404],
+        },
+      },
+      post: {
+        tags: ['Files'],
+        summary: '자료 첨부 파일 업로드',
+        security: [{ accessCookie: [] }],
+        requestBody: {
+          required: true,
+          content: { 'multipart/form-data': { schema: ref('SourceFileUploadRequest') } },
+        },
+        responses: {
+          201: response('업로드된 파일', 'SourceFileResponse'),
+          ...errorResponses,
+          413: response('파일 크기 초과', 'ApiError'),
+          415: response('지원하지 않는 파일 형식', 'ApiError'),
+        },
+      },
+    },
+    '/files/{id}/download': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      get: {
+        tags: ['Files'],
+        summary: '첨부 파일 다운로드',
+        responses: {
+          200: {
+            description: '파일 바이너리',
+            content: {
+              'application/octet-stream': { schema: { type: 'string', format: 'binary' } },
+            },
+          },
+          404: errorResponses[404],
+        },
+      },
+    },
+    '/files/{id}': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+      ],
+      delete: {
+        tags: ['Files'],
+        summary: '첨부 파일 삭제',
+        security: [{ accessCookie: [] }],
+        responses: { 204: response('삭제됨'), ...errorResponses },
       },
     },
     '/users/{id}': {

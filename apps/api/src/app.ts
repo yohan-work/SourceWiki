@@ -9,6 +9,7 @@ import { requestId, requestLogger } from './middleware/request-context.js';
 import { verifyOrigin } from './middleware/origin.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createCommentRouter } from './modules/comments/comment.routes.js';
+import { createFileRouter } from './modules/files/file.routes.js';
 import { createHealthRouter } from './modules/health/health.routes.js';
 import { createSourceRouter } from './modules/sources/source.routes.js';
 import { createToolsRouter } from './modules/tools/tools.routes.js';
@@ -39,6 +40,7 @@ export function createApp({
   app.use('/api/tools', createToolsRouter());
   app.use('/api/sources', createSourceRouter());
   app.use('/api/comments', createCommentRouter());
+  app.use('/api/files', createFileRouter());
   app.use('/api/users', createUserRouter());
   app.use('/api', createOpenApiRouter());
 

@@ -7,6 +7,7 @@ import {
   paginationQuerySchema,
   publicHttpUrlSchema,
   sourceChatResponseSchema,
+  sourceFileListResponseSchema,
   sourceLikeResponseSchema,
   sourceListQuerySchema,
   sourceQuestionSuggestionsResponseSchema,
@@ -121,6 +122,39 @@ describe('shared API schemas', () => {
         meta: { requestId: 'request-1' },
       }).success,
     ).toBe(true);
+  });
+
+  it('accepts source file list responses', () => {
+    expect(
+      sourceFileListResponseSchema.safeParse({
+        data: [
+          {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            sourceId: '550e8400-e29b-41d4-a716-446655440001',
+            originalName: 'notes.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 1024,
+            createdAt: '2026-06-19T12:00:00.000Z',
+          },
+        ],
+        meta: { requestId: 'request-1' },
+      }).success,
+    ).toBe(true);
+    expect(
+      sourceFileListResponseSchema.safeParse({
+        data: [
+          {
+            id: 'bad',
+            sourceId: 'bad',
+            originalName: 'bad.exe',
+            mimeType: 'application/octet-stream',
+            sizeBytes: -1,
+            createdAt: 'bad',
+          },
+        ],
+        meta: { requestId: 'request-1' },
+      }).success,
+    ).toBe(false);
   });
 
   it('allows URL fragments for extraction previews', () => {
