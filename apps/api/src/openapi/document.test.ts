@@ -11,6 +11,14 @@ describe('OpenAPI document', () => {
     expect(Object.keys(openApiDocument.paths)).toEqual(
       expect.arrayContaining([
         '/tools/extract-url',
+        '/auth/check-email',
+        '/auth/signup',
+        '/auth/verify-email',
+        '/auth/resend-verification',
+        '/auth/login',
+        '/auth/refresh',
+        '/auth/logout',
+        '/auth/me',
         '/sources',
         '/sources/graph',
         '/sources/{id}',

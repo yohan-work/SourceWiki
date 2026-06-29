@@ -1,11 +1,16 @@
 import { z } from 'zod';
 import {
   apiErrorResponseSchema,
+  authMessageResponseSchema,
   authUserResponseSchema,
+  checkEmailRequestSchema,
+  checkEmailResponseSchema,
   commentListResponseSchema,
   commentRequestSchema,
   commentResponseSchema,
   extractUrlResponseSchema,
+  loginRequestSchema,
+  resendVerificationRequestSchema,
   sourceChatRequestSchema,
   sourceChatResponseSchema,
   sourceQuestionSuggestionsResponseSchema,
@@ -16,8 +21,10 @@ import {
   sourceLikeResponseSchema,
   sourceListResponseSchema,
   sourceUpdateRequestSchema,
+  signupRequestSchema,
   updateProfileRequestSchema,
   userProfileResponseSchema,
+  verifyEmailRequestSchema,
 } from '@sourcewiki/shared';
 
 const schema = (value: z.ZodType) => z.toJSONSchema(value, { target: 'draft-2020-12' });
@@ -50,7 +57,14 @@ export const openApiDocument = {
     },
     schemas: {
       ApiError: schema(apiErrorResponseSchema),
+      CheckEmailRequest: schema(checkEmailRequestSchema),
+      CheckEmailResponse: schema(checkEmailResponseSchema),
+      SignupRequest: schema(signupRequestSchema),
+      LoginRequest: schema(loginRequestSchema),
+      VerifyEmailRequest: schema(verifyEmailRequestSchema),
+      ResendVerificationRequest: schema(resendVerificationRequestSchema),
       AuthUserResponse: schema(authUserResponseSchema),
+      AuthMessageResponse: schema(authMessageResponseSchema),
       SourceCreate: schema(sourceCreateRequestSchema),
       SourceUpdate: schema(sourceUpdateRequestSchema),
       UpdateProfile: schema(updateProfileRequestSchema),
@@ -83,6 +97,106 @@ export const openApiDocument = {
     },
   },
   paths: {
+    '/auth/check-email': {
+      post: {
+        tags: ['Auth'],
+        summary: '이메일 사용 가능 여부 확인',
+        requestBody: { required: true, ...json('CheckEmailRequest') },
+        responses: {
+          200: response('이메일 사용 가능 여부', 'CheckEmailResponse'),
+          422: errorResponses[422],
+          429: errorResponses[429],
+        },
+      },
+    },
+    '/auth/signup': {
+      post: {
+        tags: ['Auth'],
+        summary: '회원가입 및 인증 메일 발송',
+        requestBody: { required: true, ...json('SignupRequest') },
+        responses: {
+          201: response('생성된 사용자', 'AuthUserResponse'),
+          409: response('이미 사용 중인 이메일', 'ApiError'),
+          422: errorResponses[422],
+          429: errorResponses[429],
+          503: response('인증 메일 발송 실패', 'ApiError'),
+        },
+      },
+    },
+    '/auth/verify-email': {
+      post: {
+        tags: ['Auth'],
+        summary: '이메일 인증 완료',
+        requestBody: { required: true, ...json('VerifyEmailRequest') },
+        responses: {
+          200: response('인증 완료 메시지', 'AuthMessageResponse'),
+          400: response('유효하지 않거나 만료된 인증 토큰', 'ApiError'),
+          422: errorResponses[422],
+          429: errorResponses[429],
+        },
+      },
+    },
+    '/auth/resend-verification': {
+      post: {
+        tags: ['Auth'],
+        summary: '인증 메일 재발송',
+        requestBody: { required: true, ...json('ResendVerificationRequest') },
+        responses: {
+          200: response('재발송 처리 메시지', 'AuthMessageResponse'),
+          422: errorResponses[422],
+          429: errorResponses[429],
+          503: response('인증 메일 발송 실패', 'ApiError'),
+        },
+      },
+    },
+    '/auth/login': {
+      post: {
+        tags: ['Auth'],
+        summary: '로그인 및 인증 쿠키 발급',
+        requestBody: { required: true, ...json('LoginRequest') },
+        responses: {
+          200: response('로그인한 사용자', 'AuthUserResponse'),
+          401: response('이메일 또는 비밀번호 불일치', 'ApiError'),
+          403: response('이메일 미인증', 'ApiError'),
+          422: errorResponses[422],
+          429: errorResponses[429],
+        },
+      },
+    },
+    '/auth/refresh': {
+      post: {
+        tags: ['Auth'],
+        summary: '인증 쿠키 재발급',
+        security: [{ refreshCookie: [] }],
+        responses: {
+          204: response('재발급됨'),
+          401: response('세션 만료 또는 재사용 감지', 'ApiError'),
+          429: errorResponses[429],
+        },
+      },
+    },
+    '/auth/logout': {
+      post: {
+        tags: ['Auth'],
+        summary: '로그아웃 및 인증 쿠키 제거',
+        security: [{ refreshCookie: [] }],
+        responses: {
+          204: response('로그아웃됨'),
+          429: errorResponses[429],
+        },
+      },
+    },
+    '/auth/me': {
+      get: {
+        tags: ['Auth'],
+        summary: '현재 로그인 사용자 조회',
+        security: [{ accessCookie: [] }],
+        responses: {
+          200: response('현재 사용자', 'AuthUserResponse'),
+          401: errorResponses[401],
+        },
+      },
+    },
     '/tools/extract-url': {
       post: {
         tags: ['Tools'],
