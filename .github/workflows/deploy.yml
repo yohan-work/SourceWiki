@@ -76,6 +76,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/sourcewiki_deploy_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" "mkdir -p $DEPLOY_PATH/infra"
           scp -i ~/.ssh/sourcewiki_deploy_key compose.production.yaml "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:$DEPLOY_PATH/compose.production.yaml"
+          scp -i ~/.ssh/sourcewiki_deploy_key compose.azure.yaml "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:$DEPLOY_PATH/compose.azure.yaml"
           scp -i ~/.ssh/sourcewiki_deploy_key infra/Caddyfile.production "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:$DEPLOY_PATH/infra/Caddyfile.production"
 
       - name: Deploy on EC2
@@ -87,10 +88,10 @@ jobs:
             "cd $DEPLOY_PATH && \
             test -f .env.production && \
             printf '%s\n' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USER' --password-stdin && \
-            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml pull && \
-            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml run --rm api pnpm --filter @sourcewiki/api db:deploy && \
-            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml up -d && \
-            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml ps"
+            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml -f compose.azure.yaml pull && \
+            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml -f compose.azure.yaml run --rm api pnpm --filter @sourcewiki/api db:deploy && \
+            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml -f compose.azure.yaml up -d && \
+            SOURCEWIKI_API_IMAGE='$SOURCEWIKI_API_IMAGE' SOURCEWIKI_WEB_IMAGE='$SOURCEWIKI_WEB_IMAGE' docker compose --env-file .env.production -f compose.production.yaml -f compose.azure.yaml ps"
 
       - name: HTTPS smoke
         run: |
