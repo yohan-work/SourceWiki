@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
+import { env } from './config/env.js';
 import { smtpMailer, type Mailer } from './integrations/mail.js';
 import { checkDatabase as defaultDatabaseCheck } from './lib/database.js';
 import { errorHandler, notFound } from './middleware/error-handler.js';
@@ -28,6 +29,9 @@ export function createApp({
   const app = express();
 
   app.disable('x-powered-by');
+  if (env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
   app.use(requestId);
   app.use(requestLogger);
   app.use(helmet());
