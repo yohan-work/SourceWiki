@@ -10,10 +10,19 @@ export interface Mailer {
   }): Promise<void>;
 }
 
+const smtpAuth =
+  env.SMTP_USER && env.SMTP_PASSWORD
+    ? {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASSWORD,
+      }
+    : undefined;
+
 const transport = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
-  secure: false,
+  secure: env.SMTP_SECURE,
+  auth: smtpAuth,
   connectionTimeout: 5_000,
   socketTimeout: 10_000,
 });

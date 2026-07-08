@@ -15,6 +15,12 @@ const envSchema = z.object({
   SMTP_HOST: z.string().min(1).default('localhost'),
   SMTP_PORT: z.coerce.number().int().positive().max(65535).default(1025),
   SMTP_FROM: z.email().default('noreply@sourcewiki.local'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   UPLOAD_DIR: z.string().min(1).default('/tmp/sourcewiki-uploads'),
   AI_MODE: z.enum(['ollama', 'disabled', 'demo']).default('disabled'),
   OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
