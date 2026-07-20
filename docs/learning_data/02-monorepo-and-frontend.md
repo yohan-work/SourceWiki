@@ -40,4 +40,4 @@ packages/shared Zod schema + TypeScript type: 두 앱의 공용 약속
 - `apps/web/src/features/auth/login-form.tsx`: React Hook Form과 shared Zod schema로 입력을 확인하고, 로그인 성공 시 `['auth', 'me']` 캐시를 즉시 갱신한다.
 - `apps/web/src/features/sources/source-form.tsx`: 자료 생성·수정 뒤 목록/파일 query를 무효화해 오래된 화면을 다시 가져오게 한다.
 
-다음 장 [13. Frontend 상태관리와 데이터 흐름](./13-frontend-state-and-data-flow.md)에서 이 선택을 발표 질문 기준으로 자세히 다룬다.
+다음 장 [03. Frontend 상태관리와 데이터 흐름](./03-frontend-state-and-data-flow.md)에서 이 선택을 발표 질문 기준으로 자세히 다룬다.

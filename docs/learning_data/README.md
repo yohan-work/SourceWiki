@@ -19,24 +19,24 @@ flowchart LR
 
 1. [01. 서비스와 전체 요청](./01-service-and-request.md)
 2. [02. 저장소와 프론트엔드](./02-monorepo-and-frontend.md)
-3. [03. 백엔드와 API](./03-backend-and-api.md)
-4. [04. 데이터베이스와 Prisma](./04-database-and-prisma.md)
-5. [05. 인증과 이메일](./05-authentication-and-email.md)
-6. [06. 자료 기능과 권한](./06-source-features-and-permissions.md)
-7. [07. Docker와 로컬 환경](./07-docker-and-local-environment.md)
-8. [08. 프록시와 네트워크](./08-caddy-and-network.md)
-9. [09. 테스트와 품질](./09-testing-and-quality.md)
-10. [10. Azure 배포와 운영](./10-cloud-deployment-and-operations.md)
-11. [11. 장애를 논리적으로 찾는 법](./11-troubleshooting-thinking.md)
-12. [12. 용어와 발표 연습](./12-glossary-and-explanation.md)
-13. [13. Frontend 상태관리와 데이터 흐름](./13-frontend-state-and-data-flow.md)
-14. [14. Frontend API·에러·인증 심화](./14-frontend-api-error-auth.md)
-15. [15. 발표 예상 질문 답변 카드](./15-presentation-qa-cards.md)
-16. [16. 화면·기능 코드 지도](./16-screen-feature-code-map.md)
-17. [17. 인증 기능 완전 추적](./17-auth-complete-trace.md)
-18. [18. API 계약 사전](./18-api-contract-atlas.md)
-19. [19. DB 스키마 완전 해설](./19-database-schema-atlas.md)
-20. [20. 개발·CI·운영 환경 비교](./20-environment-lifecycle.md)
+3. [03. Frontend 상태관리와 데이터 흐름](./03-frontend-state-and-data-flow.md)
+4. [04. Frontend API·에러·인증 심화](./04-frontend-api-error-auth.md)
+5. [05. 백엔드와 API](./05-backend-and-api.md)
+6. [06. 데이터베이스와 Prisma](./06-database-and-prisma.md)
+7. [07. 인증과 이메일](./07-authentication-and-email.md)
+8. [08. 인증 기능 완전 추적](./08-auth-complete-trace.md)
+9. [09. 자료 기능과 권한](./09-source-features-and-permissions.md)
+10. [10. 화면·기능 코드 지도](./10-screen-feature-code-map.md)
+11. [11. API 계약 사전](./11-api-contract-atlas.md)
+12. [12. DB 스키마 완전 해설](./12-database-schema-atlas.md)
+13. [13. Docker와 로컬 환경](./13-docker-and-local-environment.md)
+14. [14. 프록시와 네트워크](./14-caddy-and-network.md)
+15. [15. 테스트와 품질](./15-testing-and-quality.md)
+16. [16. 개발·CI·운영 환경 비교](./16-environment-lifecycle.md)
+17. [17. Azure 배포와 운영](./17-cloud-deployment-and-operations.md)
+18. [18. 장애를 논리적으로 찾는 법](./18-troubleshooting-thinking.md)
+19. [19. 용어와 발표 연습](./19-glossary-and-explanation.md)
+20. [20. 발표 예상 질문 답변 카드](./20-presentation-qa-cards.md)
 21. [21. 최종 소크라틱 점검](./21-final-socratic-checklist.md)
 
 ## 읽는 법
@@ -53,4 +53,4 @@ flowchart LR
 
 ## 발표 준비 순서
 
-전체 구조를 먼저 설명할 수 있게 된 뒤, **13 → 14 → 16 → 17 → 18 → 19 → 20 → 15 → 21** 순서로 읽는다. 15번은 답을 외우기 위한 문서가 아니라, “어떤 코드가 그 답을 뒷받침하는가”를 확인하는 발표 카드다.
+전체 구조를 먼저 설명할 수 있게 된 뒤, **03 → 04 → 10 → 08 → 11 → 12 → 16 → 20 → 21** 순서로 읽는다. 20번은 답을 외우기 위한 문서가 아니라, “어떤 코드가 그 답을 뒷받침하는가”를 확인하는 발표 카드다.

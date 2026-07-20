@@ -1,4 +1,4 @@
-# 14. Frontend API·에러·인증 심화
+# 04. Frontend API·에러·인증 심화
 
 ## 먼저 생각해 보기
 
