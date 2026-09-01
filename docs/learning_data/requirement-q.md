@@ -1,4 +1,4 @@
-# 2026 하반기 과제: Frontend to FullStack - Build &amp; Understand
+# ㅁ2026 하반기 과제: Frontend to FullStack - Build &amp; Understand
 
 #### 👋 서비스 구조를 이해하기 위한 과제입니다.
 
@@ -219,8 +219,40 @@ Github를 사용하여 프로젝트를 관리합니다.
   - 프론트엔드에서 API 에러는 어떻게 처리하셨나요?
   - 공통 에러 처리를 위해 어떤 구조를 사용하셨나요?
 - 로그인
-  - 로그인 상태 확인은 어떤 방식으로 처리하셨나요?
-  - 로그인 상태는 어디에 저장하셨나요?
+  - 로그인 상태 확인은 어떤 방식으로 처리하셨나요?  
+  &gt; 로그인 상태는 Frontend에서 임의의 값을 확인하
+  
+      &gt; 는 방식이 아니라, TanStack Query의 useQuery를
+  
+      &gt; 활용한 useMeQuery Hook으로 확인했습니다.
+  
+      &gt; useMeQuery가 [authApi.me](http://authApi.me)()를 통해 GET /api/
+  
+      &gt; auth/me를 호출하면, Backend가 HttpOnly 쿠키의
+  
+      &gt; access_token을 검증합니다. 사용자 정보가 반환
+  
+      &gt; 되면 로그인 상태로 처리하고, 401 응답이면 비
+  
+      &gt; 로그인 상태인 null로 처리했습니다.
+  -   
+  - 로그인 상태는 어디에 저장하셨나요?  
+  &gt; 인증에 필요한 access token과 refresh token은
+  
+      &gt; 서버가 HttpOnly cookie로 관리했습니다.
+  
+      &gt; Frontend에서는 JWT 원문을 저장하지 않고,
+  
+      &gt; useMeQuery를 통해 /api/auth/me에서 받은 현재
+  
+      &gt; 사용자 정보를 TanStack Query의 ['auth', 'me']
+  
+      &gt; cache로 관리했습니다. 새로고침하면 쿠키를 이
+  
+      &gt; 용해 /api/auth/me를 다시 호출하고 사용자 정보
+  
+      &gt; 를 복구합니다.
+  -   
   - 페이지 새로고침 시 로그인 상태는 어떻게 유지되나요?
   - 인증이 필요한 페이지 접근은 어떻게 제어하셨나요?
   - 토큰 만료 되면 어떻게 실행되고 있나요?

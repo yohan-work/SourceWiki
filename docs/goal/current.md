@@ -1,8 +1,8 @@
 # 현재 목표
 
 - 상태: 진행 중
-- 마지막 갱신: 2026-08-31 16:52 KST
-- 현재 작업 단위: SourceWiki 발표 대비 인증·상태관리 학습
+- 마지막 갱신: 2026-09-01 15:54 KST
+- 현재 작업 단위: SourceWiki 발표 대비 인증·상태관리 복습
 
 ## 목표와 성공 기준
 
@@ -27,18 +27,19 @@
 - HttpOnly cookie의 역할과 access token 만료 시 refresh rotation·원래 요청 재시도 흐름을 학습했다.
 - TanStack Query는 서버 상태, `useState`·React Hook Form은 화면·폼 상태를 담당하도록 나누는 구조를 학습했다.
 - 진행 중:
-  - TanStack Query 이해 점검, 공통 API·에러 처리, 평가 예상 질문 기반 발표 연습.
+  - 로그인 상태 관련 평가 질문을 하나씩 복습하고, TanStack Query·공통 API·에러 처리·발표 답변으로 확장한다.
 - 차단 요인 또는 미검증:
   - 실행 환경에서 테스트·E2E·실제 API 요청은 이번 세션에 실행하지 않았다.
-  - TanStack Query와 `useState`/React Hook Form의 구분은 내일 자신의 말로 다시 확인한다.
+  - 평가 질문 5개를 발표 형식으로 독립 답변하는 연습은 아직 완료하지 않았다.
 
 ## 마지막 체크포인트
 
-- Handoff: [2026-08-31-1652-sourcewiki-auth-state-learning](../handoff/2026-08-31-1652-sourcewiki-auth-state-learning.md)
-- Socratic: [2026-08-31-1652-sourcewiki-auth-state-learning](../socratic/2026-08-31-1652-sourcewiki-auth-state-learning.md)
+- Handoff: [2026-09-01-1554-sourcewiki-auth-state-review](../handoff/2026-09-01-1554-sourcewiki-auth-state-review.md)
+- Socratic: [2026-09-01-1554-sourcewiki-auth-state-review](../socratic/2026-09-01-1554-sourcewiki-auth-state-review.md)
 
 ## 재개 지점
 
-1. 서버 상태와 화면 상태를 분류하고 `useQuery`, `useMutation`, `invalidateQueries`, `setQueryData`를 이해 점검한다.
-2. `apps/web/src/lib/api/api-client.ts`의 공통 API·에러·401 refresh 흐름을 학습한다.
-3. `docs/learning_data/requirement-q.md` 예상 질문에 실제 코드 경로와 발표용 답변을 연결한다.
+1. 로그인 상태 저장 위치, 새로고침, 접근 제어, token 만료 질문을 각각 답한다.
+2. 서버 상태와 화면 상태를 분류하고 `useQuery`, `useMutation`, `invalidateQueries`, `setQueryData`를 이해 점검한다.
+3. `apps/web/src/lib/api/api-client.ts`의 공통 API·에러·401 refresh 흐름을 학습한다.
+4. `docs/learning_data/requirement-q.md` 예상 질문에 실제 코드 경로와 발표용 답변을 연결한다.
