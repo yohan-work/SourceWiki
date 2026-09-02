@@ -23,13 +23,20 @@ function hash(value: string) {
   return result;
 }
 
+// Math.sin, Math.cos, Math.hypot은 명세상 정확한 반올림이 강제되지 않아 서버(Node)와
+// 브라우저의 결과가 마지막 비트에서 갈릴 수 있다. 좌표를 고정 자릿수로 반올림해
+// 양쪽이 같은 문자열을 만들도록 맞춘다. 그러지 않으면 hydration mismatch가 발생한다.
+function quantize(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 function nodePosition(id: string, index: number, total: number, weight: number) {
   const ring = index % 3;
   const angle = (index / Math.max(total, 1)) * Math.PI * 2 + (hash(id) % 100) / 100;
   const radius = 80 + ring * 74 + Math.min(weight, 8) * 5;
   return {
-    x: CENTER_X + Math.cos(angle) * radius,
-    y: CENTER_Y + Math.sin(angle) * radius * 0.72,
+    x: quantize(CENTER_X + Math.cos(angle) * radius),
+    y: quantize(CENTER_Y + Math.sin(angle) * radius * 0.72),
   };
 }
 
@@ -44,8 +51,8 @@ function edgePath(edge: PositionedEdge, index: number) {
   const curve = Math.min(68, Math.max(24, distance * 0.16)) * (index % 2 === 0 ? 1 : -1);
   const midpointX = (edge.source.x + edge.target.x) / 2;
   const midpointY = (edge.source.y + edge.target.y) / 2;
-  const controlX = midpointX + (-dy / distance) * curve;
-  const controlY = midpointY + (dx / distance) * curve;
+  const controlX = quantize(midpointX + (-dy / distance) * curve);
+  const controlY = quantize(midpointY + (dx / distance) * curve);
   return `M ${edge.source.x} ${edge.source.y} Q ${controlX} ${controlY} ${edge.target.x} ${edge.target.y}`;
 }
 

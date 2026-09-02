@@ -1,5 +1,10 @@
 # 12. DB 스키마 완전 해설
 
+## 이 장에서 답할 수 있게 되는 것
+
+- 테이블 관계를 어떤 기준으로 설계했는가
+- Cascade와 Restrict를 나눈 기준
+
 ## 먼저 생각해 보기
 
 테이블 이름만 아는 것과, 어떤 column이 왜 unique/index/relation인지 설명하는 것은 다르다. 평가에서 관계 질문을 받으면 데이터가 이동하는 방식으로 설명해야 한다.
@@ -44,3 +49,7 @@ flowchart TD
 - Tag의 `name`과 `normalizedName`을 분리한 이유를 설명할 수 있는가?
 - `SourceLike`에 별도 id 대신 복합 PK를 쓴 이유를 설명할 수 있는가?
 - migration과 seed가 각각 어느 환경에 필요한지 말할 수 있는가?
+
+---
+
+다음 장 → [13. Docker와 로컬 환경](./13-docker-and-local-environment.md)

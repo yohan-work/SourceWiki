@@ -197,7 +197,10 @@ Github를 사용하여 프로젝트를 관리합니다.
 ### Backend
 
 - JWT 인증 구현
-  - JWT 토큰에는 어떤 정보를 포함하셨나요?
+  - JWT 토큰에는 어떤 정보를 포함하셨나요?  
+  사용자 식별 sub, access,refresh를 구분하는 type,  
+  token과 session을 식별하는 jti, 발급자, 대상, 발급 시간, 만료시간 사용.  
+  access token 15분, refresh token 14일
 
 ### Database
 
@@ -216,8 +219,17 @@ Github를 사용하여 프로젝트를 관리합니다.
   - 공통 API 요청 처리를 위해 어떤 구조를 사용하셨나요?
   - API 요청 시 인증 토큰은 어떻게 전달하셨나요?
 - 에러 처리
-  - 프론트엔드에서 API 에러는 어떻게 처리하셨나요?
-  - 공통 에러 처리를 위해 어떤 구조를 사용하셨나요?
+  - 프론트엔드에서 API 에러는 어떻게 처리하셨나요?  
+  &gt; 프론트엔드 API 에러는 공통 apiFetch에서 처리했습니다.  
+  Backend의 오류 응답을 ApiError로 변환해 status, code, message, fieldErrors,requestId를 일관되게 관리했습니다.  
+  각 화면에서는 fieldErrors를 해당 입력칸에 표시하고, 일반 오류는 폼 상단에 보여줍니다.  
+  401 오류가 발생하면 refresh token으로 세션을 갱신한 뒤 원래 요청을 한 번 재시도하고, 갱신에도 실패하면 다시 로그인하도록 처리했습니다.  
+    
+    
+  - 공통 에러 처리를 위해 어떤 구조를 사용하셨나요?  
+  apiFetch라는 api wrapper를 만들고, 모든 feature API가 이를 사용하도록 구성.  
+  backend의 다양한 오류 응답은 ApiError 클래스로 변환해서 status, code, message, fieldErros, requestId를 공통형식으로 관리했다.  
+  
 - 로그인
   - 로그인 상태 확인은 어떤 방식으로 처리하셨나요?  
   &gt; 로그인 상태는 Frontend에서 임의의 값을 확인하
@@ -234,8 +246,7 @@ Github를 사용하여 프로젝트를 관리합니다.
   
       &gt; 되면 로그인 상태로 처리하고, 401 응답이면 비
   
-      &gt; 로그인 상태인 null로 처리했습니다.
-  -   
+      &gt; 로그인 상태인 null로 처리했습니다.  
   - 로그인 상태는 어디에 저장하셨나요?  
   &gt; 인증에 필요한 access token과 refresh token은
   
@@ -251,11 +262,23 @@ Github를 사용하여 프로젝트를 관리합니다.
   
       &gt; 용해 /api/auth/me를 다시 호출하고 사용자 정보
   
-      &gt; 를 복구합니다.
-  -   
-  - 페이지 새로고침 시 로그인 상태는 어떻게 유지되나요?
-  - 인증이 필요한 페이지 접근은 어떻게 제어하셨나요?
-  - 토큰 만료 되면 어떻게 실행되고 있나요?
+      &gt; 를 복구합니다.  
+  - 페이지 새로고침 시 로그인 상태는 어떻게 유지되나요?  
+  브라우저의 HttpOnly cookie 는 유지되고, useMeQuery가 /api/auth/me를 호출해 Backend에서 access token을 검증합니다.  
+  
+    
+  - 인증이 필요한 페이지 접근은 어떻게 제어하셨나요?  
+  Frontend에서 로그인 여부를 확인해 redirect하고, Backend에서 authenticate, requireVerifiedUser, 소유권 검사를 통해 최종 권한을 검증
+  
+    
+  - 토큰 만료 되면 어떻게 실행되고 있나요?  
+  401 응답 -&gt; refresh token 을 backend로 보냄 -&gt; 새 access token 발급 -&gt; 새 refresh token도 발급 -&gt; 원래 요청 시도
 - 회원가입
-  - 메일 인증은 어떤 방식으로 하셨나요?
+  - 메일 인증은 어떤 방식으로 하셨나요?  
+  일회용 token이 포함된 링크를 이메일로 발송하는 방식으로 구현했습니다.  
+  회원가입시 token 원문은 이메일 링크에만 넣고,  
+  DB에는 token hash와 만료 시간을 저장했습니다.  
+  사용자가 링크를 클릭하면 Frontend가 token을 /api/auth/verify-email로 전달하고, Backend가 token의 유효성·만료 여부·사용 여부를 확인합니다.
+  
+    검증에 성공하면 usedAt과 emailVerifiedAt을 기록해 이메일 인증을 완료합니다
 

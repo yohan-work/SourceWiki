@@ -1,5 +1,10 @@
 # 11. API 계약 사전
 
+## 이 장에서 답할 수 있게 되는 것
+
+- 각 endpoint의 요청·인증·성공·실패 형태
+- API 문서가 어떻게 자동으로 만들어지는가
+
 ## 먼저 생각해 보기
 
 프론트엔드에서 endpoint URL만 안다고 API를 이해한 것일까? 아니다. 요청 형태, 인증, 성공/실패 응답, 화면 후속 동작이 모두 계약이다.
@@ -44,6 +49,27 @@
 | 422 | schema 검증 실패 | `fieldErrors`를 input에 표시 |
 | 503 | SMTP/AI 등 의존성 실패 | 재시도·대체 행동 안내 |
 
+## API 문서(Swagger)는 손으로 쓰지 않았다
+
+`http://localhost:8080/api/docs`를 열면 모든 endpoint를 브라우저에서 확인하고 직접 호출해 볼 수 있다. 이 문서의 요청·응답 형태는 **사람이 따로 적은 것이 아니라 `packages/shared`의 Zod schema에서 만들어진다.**
+
+```mermaid
+flowchart LR
+  Z[packages/shared의 Zod schema] --> W[Web 폼 검증]
+  Z --> A[API 요청 검증]
+  Z --> O[OpenAPI 문서 생성]
+  O --> S["/api/docs Swagger UI"]
+```
+
+`apps/api/src/openapi/document.ts`가 각 schema를 JSON Schema로 변환해 OpenAPI 문서에 넣는다. 그래서 **입력 규칙을 한 곳만 고치면 화면·API·문서가 함께 바뀐다.** 문서만 옛날 내용으로 남는 일이 구조적으로 생기지 않는다.
+
+| 주소 | 내용 |
+| --- | --- |
+| `/api/openapi.json` | 기계가 읽는 원본 문서 |
+| `/api/docs` | 사람이 보는 Swagger UI |
+
+CI는 이 문서가 올바른 OpenAPI 형식인지 자동으로 검사하고, 컨테이너를 띄운 뒤 실제로 응답하는지도 확인한다.
+
 ## 계약을 읽는 방법
 
 1. shared package의 request/response type과 Zod schema를 본다.
@@ -55,3 +81,7 @@
 ## 자기 점검
 
 `POST /api/sources`가 왜 201이고 `DELETE`가 왜 204인지 설명해 보라. 201은 새 리소스가 생성됐음을, 204는 성공했지만 응답 body가 없음을 뜻한다.
+
+---
+
+다음 장 → [12. DB 스키마 완전 해설](./12-database-schema-atlas.md)

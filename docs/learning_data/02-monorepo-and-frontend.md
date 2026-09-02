@@ -1,5 +1,10 @@
 # 02. 모노레포와 프론트엔드
 
+## 이 장에서 답할 수 있게 되는 것
+
+- 저장소가 왜 여러 폴더로 나뉘어 있는가
+- 같은 검증 규칙을 Web과 API가 어떻게 함께 쓰는가
+
 ## 먼저 생각해 보기
 
 Web과 API가 서로 다른 앱이라면, 이메일 형식 같은 규칙은 어디에 한 번만 적어야 할까?
@@ -15,6 +20,64 @@ packages/shared Zod schema + TypeScript type: 두 앱의 공용 약속
 ```
 
 `packages/shared`의 Zod schema는 “올바른 이메일, 비밀번호 길이, 요청 형태”를 한 번 정의하고 Web과 API가 함께 쓰게 한다. Web의 검증은 빠른 안내이고, API의 검증은 신뢰 경계에서의 최종 확인이다.
+
+## Zod와 schema가 무엇인가
+
+**schema(스키마)는 "서류 양식"이고, Zod는 그 양식을 만들고 검사까지 해 주는 도구다.**
+
+놀이공원에 "키 120cm 이상만 탑승"이라는 규칙이 있다고 하자.
+
+| 비유 | 실제 |
+| --- | --- |
+| 키 120cm 이상이라는 규칙 | schema — 지켜야 할 기준 |
+| 키 재는 막대 | Zod — 기준을 만들고 실제로 재는 도구 |
+| "키가 5cm 모자랍니다" | Zod가 돌려주는 오류 메시지 |
+
+마지막 칸이 중요하다. Zod는 "안 된다"만 말하지 않고 **왜 안 되는지**를 함께 알려 준다. 그 문장이 그대로 화면의 입력칸 아래에 표시된다.
+
+### 실제 코드 읽는 법
+
+`packages/shared/src/index.ts`의 비밀번호 규칙이다.
+
+```ts
+export const passwordSchema = z
+  .string()                                     // 글자여야 하고
+  .min(8,  '비밀번호는 8자 이상이어야 합니다.')    // 8자 이상이어야 하고
+  .max(72, '비밀번호는 72자 이하여야 합니다.');   // 72자 이하여야 한다
+```
+
+`z`가 Zod이고, 점을 찍으며 **조건을 하나씩 붙여 나간다.** 각 조건 옆의 한국어 문장이 그 조건을 어겼을 때 보여 줄 메시지다.
+
+이렇게 만든 칸들을 모으면 **양식 한 장**이 된다.
+
+```ts
+export const signupRequestSchema = z.object({
+  email:    emailSchema,      // 이메일 칸
+  nickname: nicknameSchema,   // 닉네임 칸
+  password: passwordSchema,   // 비밀번호 칸
+});
+```
+
+회원가입 신청서다. 칸이 세 개인 양식이라고 보면 된다.
+
+### 양식 한 장이 세 군데에서 쓰인다
+
+```mermaid
+flowchart LR
+  S[signupRequestSchema] --> W[화면: 입력 즉시 안내]
+  S --> A[API: 최종 검사 후 422 거절]
+  S --> D[Swagger 문서 자동 생성]
+```
+
+| 쓰이는 곳 | 하는 일 |
+| --- | --- |
+| `apps/web/src/features/auth/signup-form.tsx` | 타이핑할 때 바로 "8자 이상이어야 합니다"를 보여 준다 |
+| `apps/api/src/middleware/validate.ts` | 들어온 요청을 다시 검사하고, 통과 못 하면 422로 거절한다 |
+| `apps/api/src/openapi/document.ts` | "회원가입은 이런 값을 보내야 한다"를 API 문서에 자동으로 넣는다 |
+
+**규칙을 한 곳만 고치면 세 군데가 함께 바뀐다.** 비밀번호를 8자에서 10자로 늘리고 싶으면 `.min(8, ...)`을 한 번 고치면 된다. 이것이 `packages/shared`라는 폴더가 존재하는 이유다.
+
+## 프론트엔드가 쓰는 도구들
 
 | Web 기술 | 이 프로젝트에서의 쓰임 |
 | --- | --- |
@@ -40,4 +103,6 @@ packages/shared Zod schema + TypeScript type: 두 앱의 공용 약속
 - `apps/web/src/features/auth/login-form.tsx`: React Hook Form과 shared Zod schema로 입력을 확인하고, 로그인 성공 시 `['auth', 'me']` 캐시를 즉시 갱신한다.
 - `apps/web/src/features/sources/source-form.tsx`: 자료 생성·수정 뒤 목록/파일 query를 무효화해 오래된 화면을 다시 가져오게 한다.
 
-다음 장 [03. Frontend 상태관리와 데이터 흐름](./03-frontend-state-and-data-flow.md)에서 이 선택을 발표 질문 기준으로 자세히 다룬다.
+---
+
+다음 장 → [03. Frontend 상태관리와 데이터 흐름](./03-frontend-state-and-data-flow.md)

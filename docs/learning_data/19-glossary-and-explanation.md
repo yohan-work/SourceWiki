@@ -1,5 +1,10 @@
 # 19. 용어와 발표 연습
 
+## 이 장에서 답할 수 있게 되는 것
+
+- 이 프로젝트를 1분 안에 설명하기
+- 기술 용어를 쉬운 말로 바꾸기
+
 ## 먼저 생각해 보기
 
 이 프로젝트를 1분 안에 설명한다면, 기술 이름을 나열하지 않고 어떤 순서로 말해야 할까?
@@ -17,11 +22,16 @@
 | API | 프로그램끼리 대화하는 약속 | `/api/auth/login` |
 | DB | 오래 보관되는 데이터 | PostgreSQL `users`, `sources` |
 | ORM | 코드와 DB를 연결하는 도구 | Prisma |
+| schema | 지켜야 할 서류 양식·기준 | 회원가입에 필요한 칸과 규칙 |
+| Zod | 그 양식을 코드로 만들고 검사해 주는 도구 | `packages/shared`의 `passwordSchema` |
+| 검증(validation) | 들어온 값이 규칙에 맞는지 확인하는 일 | 8자 미만 비밀번호를 422로 거절 |
 | migration | DB 구조 변경 이력 | Prisma migrations |
 | cookie | 브라우저가 보관하는 작은 상태 값 | access/refresh token |
 | reverse proxy | 요청을 내부 서비스로 전달 | Caddy |
 | container | 격리된 실행 단위 | api, web, db |
 | CI/CD | 검사와 배포 자동화 | GitHub Actions |
+
+> `schema`와 `Zod`가 처음이라면 [02장의 "Zod와 schema가 무엇인가"](./02-monorepo-and-frontend.md#zod와-schema가-무엇인가)를 먼저 본다.
 
 ## 이해 점검
 
@@ -35,3 +45,7 @@
 ## 다음 학습 방향
 
 AI는 현재 demo 모드이며, 실제 모델 연동은 VM 자원·Docker 네트워크·응답 시간과 함께 별도 설계가 필요하다. 먼저 이 교재의 Web→API→DB→배포 흐름을 설명할 수 있게 된 뒤 확장한다.
+
+---
+
+다음 장 → [20. 발표 예상 질문 답변 카드](./20-presentation-qa-cards.md)

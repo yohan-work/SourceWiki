@@ -1,5 +1,11 @@
 # 08. 인증 기능 완전 추적
 
+## 이 장에서 답할 수 있게 되는 것
+
+- 회원가입부터 로그아웃까지의 코드 경로
+- 새로고침해도 로그인이 유지되는 이유
+- 토큰 재사용 탐지가 필요한 이유
+
 ## 먼저 생각해 보기
 
 회원가입, 이메일 인증, 로그인, 새로고침, 로그아웃은 모두 “인증”이다. 그런데 DB에 같은 토큰 하나만 저장하면 왜 부족할까?
@@ -78,3 +84,7 @@ sequenceDiagram
 
 **Q. 토큰을 localStorage에 두지 않은 대가는?**  
 **A.** JavaScript가 직접 Authorization header를 만들 수 없고 CSRF 같은 쿠키 특성도 고려해야 한다. 대신 httpOnly, SameSite, Origin 검증으로 위험을 낮춘다.
+
+---
+
+다음 장 → [09. 자료 기능과 권한](./09-source-features-and-permissions.md)
